@@ -67,11 +67,12 @@ deb:
   packageName: deepseek-harness
   priority: optional
 
-# Separate arm64 artifacts (not universal). Ad-hoc; CSC is off.
+# Separate arm64 artifacts (not universal). Unsigned v1; CSC is off.
 mac:
   category: public.app-category.developer-tools
   icon: resources/icons/512.png
   identity: null
+  hardenedRuntime: false
   gatekeeperAssess: false
   notarize: false
   target:

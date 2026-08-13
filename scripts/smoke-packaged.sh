@@ -22,12 +22,28 @@ case "$out_dir" in
   *) out_dir="$repo_root/$out_dir" ;;
 esac
 
+# First match only. macOS find is BSD and has no GNU -quit.
+first_glob_file() {
+  local f
+  for f in "$@"; do
+    if [ -f "$f" ]; then
+      printf '%s\n' "$f"
+      return 0
+    fi
+  done
+  return 1
+}
+
+first_find_print() {
+  ( set +o pipefail; find "$@" -print | head -n 1 )
+}
+
 smoke_packaged_mac() {
   need_cmd unzip
   local zip dmg app helper bin url port
   local ready_timeout sidecar_pid electron_pid gone orphan_deadline deadline
-  zip=$(find "$out_dir" -maxdepth 1 -type f -name '*.zip' -print -quit || true)
-  dmg=$(find "$out_dir" -maxdepth 1 -type f -name '*.dmg' -print -quit || true)
+  zip=$(first_glob_file "$out_dir"/*.zip || true)
+  dmg=$(first_glob_file "$out_dir"/*.dmg || true)
   if [ -z "$zip" ] || [ -z "$dmg" ]; then
     echo "error: expected .dmg and .zip in $out_dir" >&2
     ls -la "$out_dir" >&2 || true
@@ -51,7 +67,7 @@ smoke_packaged_mac() {
 
   mkdir -p "$workdir/app"
   unzip -q "$zip" -d "$workdir/app"
-  app=$(find "$workdir/app" -maxdepth 3 -name '*.app' -type d -print -quit || true)
+  app=$(first_find_print "$workdir/app" -maxdepth 3 -name '*.app' -type d || true)
   if [ -z "$app" ]; then
     echo "error: unzipped macOS zip has no .app" >&2
     find "$workdir/app" >&2 || true

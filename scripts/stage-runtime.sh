@@ -153,11 +153,13 @@ stage_spawn_helper() {
       roots+=("$clone/packages/subprocess/subprocess-local/node_modules")
     [ -d "$clone/node_modules" ] && roots+=("$clone/node_modules")
     if [ "${#roots[@]}" -gt 0 ]; then
+      # BSD find (macOS) has no -quit; take the first printed path.
       source=$(
+        set +o pipefail
         find "${roots[@]}" \
           \( -path "*/node-pty/prebuilds/darwin-${arch}/spawn-helper" \
           -o -path "*/node-pty/build/Release/spawn-helper" \) \
-          -type f -print -quit 2>/dev/null || true
+          -type f -print 2>/dev/null | head -n 1
       )
     fi
   fi
