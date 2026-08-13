@@ -1,6 +1,6 @@
 # Development
 
-This repository is a thin packaging repo. It never vendors `deepseek-ai/deepseek-harness` and must not add that tree as a git submodule. Fetch and build scripts land in a later change; this page is the intended flow only.
+This repository is a thin packaging repo. It never vendors `deepseek-ai/deepseek-harness` and must not add that tree as a git submodule.
 
 ## Pin
 
@@ -12,14 +12,31 @@ This repository is a thin packaging repo. It never vendors `deepseek-ai/deepseek
 
 HTTPS is the default. Use SSH only as a fallback.
 
-## Intended fetch and build
+## Fetch and build
 
-1. Read the pin from `versions.json`.
-2. Clone the harness into `.cache/harness` (gitignored) at `harness.sha`. Do not add a submodule. Do not commit the clone.
-3. In that clone, run `pnpm install --frozen-lockfile`.
-4. Then run `pnpm run build`.
+From the repository root. Requires `git` and `jq`. Building also requires Node 24 and pnpm 11.7.0 on `PATH` (see `runtimes` in `versions.json`). The scripts do not install Node or pnpm.
 
-If `.cache/harness` already exists and `HEAD` matches the pin, the fetch is a no-op. If the SHA differs, update in place (fetch + detached checkout). On fetch failure, wipe the cache and clone again.
+```sh
+./scripts/fetch-harness.sh    # clone or update .cache/harness to the pin
+./scripts/build-harness.sh    # fetch, then pnpm install --frozen-lockfile && pnpm run build
+```
+
+`fetch-harness.sh` reads `versions.json` and clones `harness.repository` into `.cache/harness` at `harness.sha`. If that directory already exists and `HEAD` matches the pin, it exits 0 without fetching.
+
+If `HEAD` differs, it fetches the pin SHA in place (`git fetch --depth=1 origin <sha>`) and checks it out detached. On fetch failure it wipes `.cache/harness` and clones again. After checkout it verifies `git rev-parse HEAD` equals the pin.
+
+`build-harness.sh` runs `fetch-harness.sh` first so the cache is at the pin, then runs `pnpm install --frozen-lockfile` and `pnpm run build` inside `.cache/harness`. It does not inject workspace members. Re-run it after a pin bump.
+
+### Clone URL
+
+HTTPS (`harness.repository`) is the default.
+
+- Set `HARNESS_CLONE_SSH=1` to clone `harness.sshRepository` instead.
+- If an HTTPS clone fails, the script retries with `harness.sshRepository`.
+
+```sh
+HARNESS_CLONE_SSH=1 ./scripts/fetch-harness.sh
+```
 
 ## Rules
 
