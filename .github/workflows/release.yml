@@ -1,0 +1,158 @@
+# Publish a GitHub Release for desktop-v* tags.
+# Always rebuilds the current build-desktop.yml matrix on this ref.
+# Does not download artifacts from an earlier workflow run.
+name: Release
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Rebuild the current matrix and publish a GitHub Release. This ref must be the matching desktop-v* tag.
+        type: boolean
+        required: true
+        default: false
+
+# contents: write lives only on the publish job below.
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: verify tag
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      tag: ${{ steps.check.outputs.tag }}
+      harness_sha: ${{ steps.check.outputs.harness_sha }}
+      harness_version: ${{ steps.check.outputs.harness_version }}
+      prerelease: ${{ steps.check.outputs.prerelease }}
+    steps:
+      - name: Require confirmation
+        if: github.event_name == 'workflow_dispatch' && inputs.confirm != true
+        run: |
+          echo "workflow_dispatch requires the confirm checkbox."
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Match tag to versions.json
+        id: check
+        run: |
+          set -euo pipefail
+          version=$(jq -r .desktop.version versions.json)
+          harness_sha=$(jq -r .harness.sha versions.json)
+          harness_version=$(jq -r .harness.version versions.json)
+
+          if [ -z "$version" ] || [ "$version" = "null" ]; then
+            echo "error: desktop.version missing from versions.json" >&2
+            exit 1
+          fi
+          if [ -z "$harness_sha" ] || [ "$harness_sha" = "null" ]; then
+            echo "error: harness.sha missing from versions.json" >&2
+            exit 1
+          fi
+
+          expected="desktop-v${version}"
+          if [ "${GITHUB_REF_TYPE}" != "tag" ] || [ "${GITHUB_REF_NAME}" != "$expected" ]; then
+            echo "error: ref '${GITHUB_REF}' does not match versions.json desktop.version '${version}' (expected refs/tags/${expected})" >&2
+            exit 1
+          fi
+
+          prerelease=false
+          case "$version" in
+            *beta*|*BETA*|*rc*|*RC*) prerelease=true ;;
+          esac
+
+          {
+            echo "version=${version}"
+            echo "tag=${expected}"
+            echo "harness_sha=${harness_sha}"
+            echo "harness_version=${harness_version}"
+            echo "prerelease=${prerelease}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "desktop.version=${version} tag=${expected} harness.sha=${harness_sha} prerelease=${prerelease}"
+
+  build:
+    name: rebuild matrix
+    needs: verify
+    uses: ./.github/workflows/build-desktop.yml
+    permissions:
+      contents: read
+      actions: write
+
+  release:
+    name: publish GitHub Release
+    needs: [verify, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Download rebuilt artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.verify.outputs.tag }}
+          VERSION: ${{ needs.verify.outputs.version }}
+          HARNESS_SHA: ${{ needs.verify.outputs.harness_sha }}
+          HARNESS_VERSION: ${{ needs.verify.outputs.harness_version }}
+          PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t files < <(find release-assets -type f | sort)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "error: no rebuilt artifacts downloaded from this run" >&2
+            exit 1
+          fi
+          printf 'attaching %s\n' "${files[@]}"
+
+          cat > release-notes.md <<EOF
+          ## DeepSeek Harness Desktop ${VERSION}
+
+          **Unsigned developer-preview build.** These artifacts are not code-signed or notarized. Windows SmartScreen and macOS Gatekeeper will warn; Linux packages have no signature. Treat the OS trust UI as correct. There is no auto-update.
+
+          | | |
+          | --- | --- |
+          | Desktop | \`${VERSION}\` |
+          | Harness SHA | \`${HARNESS_SHA}\` |
+          | Harness version | \`${HARNESS_VERSION}\` |
+
+          Artifacts were **rebuilt on this tag**. They were not copied from an earlier workflow run.
+          EOF
+
+          extra=()
+          if [ "$PRERELEASE" = "true" ]; then
+            extra+=(--prerelease)
+          fi
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release ${TAG} exists; updating notes and assets"
+            gh release edit "$TAG" \
+              --title "DeepSeek Harness ${VERSION}" \
+              --notes-file release-notes.md \
+              "${extra[@]}"
+            gh release upload "$TAG" "${files[@]}" --clobber
+          else
+            gh release create "$TAG" "${files[@]}" \
+              --title "DeepSeek Harness ${VERSION}" \
+              --notes-file release-notes.md \
+              --verify-tag \
+              "${extra[@]}"
+          fi

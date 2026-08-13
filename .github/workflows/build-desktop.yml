@@ -1,13 +1,14 @@
 name: Build desktop
 
+# workflow_call: release.yml rebuilds this matrix on desktop-v* tags.
+# Tags are not a standalone trigger so a tag push does not build twice.
 on:
   pull_request:
   push:
     branches:
       - main
-    tags:
-      - "desktop-v*"
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
