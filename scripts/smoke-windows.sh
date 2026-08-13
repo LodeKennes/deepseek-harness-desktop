@@ -32,17 +32,41 @@ win_path() {
   fi
 }
 
+# Prefer GHA RUNNER_ARCH: Git Bash on windows-11-arm can report x86_64.
+detect_pack_arch() {
+  if [ -n "${RUNNER_ARCH:-}" ]; then
+    case "$RUNNER_ARCH" in
+      X64|x64|amd64) printf 'x64' ;;
+      ARM64|arm64|aarch64) printf 'arm64' ;;
+      *)
+        echo "error: unsupported RUNNER_ARCH=$RUNNER_ARCH (expected X64 or ARM64)" >&2
+        exit 1
+        ;;
+    esac
+    return
+  fi
+  case "$(uname -m)" in
+    x86_64|amd64) printf 'x64' ;;
+    aarch64|arm64) printf 'arm64' ;;
+    *)
+      echo "error: unsupported architecture $(uname -m) (expected x64 or arm64)" >&2
+      exit 1
+      ;;
+  esac
+}
+
 out_dir=${1:-${PACKAGE_OUT:-$repo_root/dist/installers}}
 case "$out_dir" in
   /*) ;;
   *) out_dir="$repo_root/$out_dir" ;;
 esac
 
-zip=$(find "$out_dir" -maxdepth 1 -type f -name 'DeepSeek-Harness-*-win-x64.zip' -print -quit || true)
-nsis=$(find "$out_dir" -maxdepth 1 -type f -name 'DeepSeek-Harness-*-win-x64.exe' -print -quit || true)
+pack_arch=$(detect_pack_arch)
+zip=$(find "$out_dir" -maxdepth 1 -type f -name "DeepSeek-Harness-*-win-${pack_arch}.zip" -print -quit || true)
+nsis=$(find "$out_dir" -maxdepth 1 -type f -name "DeepSeek-Harness-*-win-${pack_arch}.exe" -print -quit || true)
 
 if [ -z "$zip" ] || [ -z "$nsis" ]; then
-  echo "error: expected win-x64 NSIS .exe and portable .zip in $out_dir" >&2
+  echo "error: expected win-${pack_arch} NSIS .exe and portable .zip in $out_dir" >&2
   ls -la "$out_dir" >&2 || true
   exit 1
 fi

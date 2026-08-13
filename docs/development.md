@@ -47,25 +47,26 @@ HARNESS_CLONE_SSH=1 ./scripts/fetch-harness.sh
 
 `STAGE` defaults to `dist/runtime`. The script deploys the existing `@deepseek-ai/dsh` package (no injected workspace member), materializes links, restores missing direct deps, downloads official Node, and copies `electron/sidecar-entry.mjs`.
 
-## Package (Linux x64 / macOS arm64)
+## Package (Linux / macOS)
 
-Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` when it is missing), plus `pnpm install` in this repo. `STAGE` is not supported here: electron-builder `extraResources` is always `dist/runtime`. Unset `STAGE` or set it to that path. The host OS/arch must match the target (no cross-compile).
+Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` when it is missing), plus `pnpm install` in this repo. `STAGE` is not supported here: electron-builder `extraResources` is always `dist/runtime`. Unset `STAGE` or set it to that path. The host OS/arch must match the target (no cross-compile; two macOS DMGs, not `lipo`).
 
 ```sh
 ./scripts/package.sh
-# Linux x64: dist/installers/DeepSeek-Harness-<desktop.version>-linux-x64.{deb,AppImage}
-# macOS arm64: dist/installers/DeepSeek-Harness-<desktop.version>-mac-arm64.{dmg,zip}
+# Linux x64 / arm64: dist/installers/DeepSeek-Harness-<desktop.version>-linux-<arch>.{deb,AppImage}
+# macOS arm64 / x64: dist/installers/DeepSeek-Harness-<desktop.version>-mac-<arch>.{dmg,zip}
 ```
 
 electron-builder always runs with `--publish never`. Linux: `.deb` is the primary installer (SUID `chrome-sandbox`, no `--no-sandbox`); AppImage is a portable extra and is launched with `--no-sandbox`. macOS: DMG (drag to Applications) + zip; `stage-runtime.sh` copies `node-pty`'s `spawn-helper` next to the bundled Node as `node/bin/node-spawn-helper`. Host smoke of the staged sidecar: `./scripts/smoke-sidecar.sh`. After packaging, `./scripts/smoke-packaged.sh` extract-and-runs the AppImage (no `libfuse2`) and unpacks the `.deb` on Linux, or unzips the macOS zip, asserts the helper, and orphan-kills the `.app`.
 
-## Package (Windows x64)
+## Package (Windows)
 
 Same `package.sh` on a Windows host (Git Bash). Official Node is staged at `dist/runtime/node/node.exe` (not `node/bin/node`). Artifacts are a per-user NSIS installer (`oneClick: false`, install-dir page, PATH checkbox **unchecked** by default) and a portable zip.
 
 ```sh
 ./scripts/package.sh
-# artifacts: dist/installers/DeepSeek-Harness-<desktop.version>-win-x64.{exe,zip}
+# artifacts: dist/installers/DeepSeek-Harness-<desktop.version>-win-<arch>.{exe,zip}
+# arch is x64 or arm64 (host-native)
 ```
 
 Host smoke of the staged sidecar (quit pipe): `./scripts/smoke-sidecar.sh`. After packaging, `./scripts/smoke-windows.sh` unzips the portable build, launches it, then kills Electron (not `/T`) and asserts `node.exe` is gone.

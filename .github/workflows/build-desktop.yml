@@ -205,3 +205,189 @@ jobs:
             dist/installers/DeepSeek-Harness-*-win-x64.zip
           if-no-files-found: error
           retention-days: 14
+
+  linux-arm64:
+    name: linux-arm64
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch harness
+        run: ./scripts/fetch-harness.sh
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # install + build + manylinux aarch64 pty.node happen inside stage-runtime.sh
+      - name: Stage runtime
+        run: ./scripts/stage-runtime.sh
+
+      - name: Install Electron shell
+        run: pnpm install --frozen-lockfile
+
+      - name: Sidecar smoke
+        run: ./scripts/smoke-sidecar.sh
+
+      - name: Package Linux arm64
+        run: ./scripts/package.sh
+
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+        # Do not install libfuse2. AppImage smoke uses --appimage-extract-and-run.
+
+      - name: Packaged smoke
+        run: ./scripts/smoke-packaged.sh
+
+      - name: Desktop version
+        id: ver
+        run: echo "version=$(jq -r .desktop.version versions.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeepSeek-Harness-${{ steps.ver.outputs.version }}-linux-arm64
+          path: |
+            dist/installers/DeepSeek-Harness-*-linux-arm64.deb
+            dist/installers/DeepSeek-Harness-*-linux-arm64.AppImage
+          if-no-files-found: error
+          retention-days: 14
+
+  mac-x64:
+    name: mac-x64
+    runs-on: macos-13
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch harness
+        run: ./scripts/fetch-harness.sh
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # install + build happen inside stage-runtime.sh (no manylinux)
+      - name: Stage runtime
+        run: ./scripts/stage-runtime.sh
+
+      - name: Install Electron shell
+        run: pnpm install --frozen-lockfile
+
+      - name: Sidecar smoke
+        run: ./scripts/smoke-sidecar.sh
+
+      - name: Package macOS x64
+        run: ./scripts/package.sh
+
+      - name: Packaged smoke
+        run: ./scripts/smoke-packaged.sh
+
+      - name: Desktop version
+        id: ver
+        run: echo "version=$(jq -r .desktop.version versions.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeepSeek-Harness-${{ steps.ver.outputs.version }}-mac-x64
+          path: |
+            dist/installers/DeepSeek-Harness-*-mac-x64.dmg
+            dist/installers/DeepSeek-Harness-*-mac-x64.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  # Official win-arm64 path on GitHub-hosted windows-11-arm.
+  # Forks whose Actions account does not provide that runner label should
+  # delete or comment out this job rather than emulate or continue-on-error.
+  win-arm64:
+    name: win-arm64
+    runs-on: windows-11-arm
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: |
+          dest="$(cygpath -u "$RUNNER_TEMP")/jq"
+          mkdir -p "$dest"
+          curl -fsSL -o "$dest/jq.exe" \
+            https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-windows-amd64.exe
+          echo "$(cygpath -w "$dest")" >> "$GITHUB_PATH"
+
+      - name: Fetch harness
+        run: ./scripts/fetch-harness.sh
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # install + build happen inside stage-runtime.sh; download-node writes node/node.exe
+      - name: Stage runtime
+        run: ./scripts/stage-runtime.sh
+
+      - name: Confirm node.exe layout
+        run: |
+          test -f dist/runtime/node/node.exe
+          test -f dist/runtime/bin/dsh.cmd
+          test -f dist/runtime/sidecar-entry.mjs
+          if [ -e dist/runtime/node/bin/node ]; then
+            echo "error: POSIX node layout present; expected node/node.exe" >&2
+            exit 1
+          fi
+          echo "ok: $(cygpath -w dist/runtime/node/node.exe)"
+
+      - name: Install Electron shell
+        run: pnpm install --frozen-lockfile
+
+      - name: Sidecar smoke
+        run: ./scripts/smoke-sidecar.sh
+
+      - name: Package Windows arm64
+        run: ./scripts/package.sh
+
+      # Launch portable zip. Kill Electron (not /T); assert node.exe gone via stdin EOF.
+      - name: Packaged orphan smoke
+        run: ./scripts/smoke-windows.sh
+
+      - name: Desktop version
+        id: ver
+        run: echo "version=$(jq -r .desktop.version versions.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeepSeek-Harness-${{ steps.ver.outputs.version }}-win-arm64
+          path: |
+            dist/installers/DeepSeek-Harness-*-win-arm64.exe
+            dist/installers/DeepSeek-Harness-*-win-arm64.zip
+          if-no-files-found: error
+          retention-days: 14

@@ -39,6 +39,18 @@ detect_arch() {
     printf '%s' "$NODE_ARCH"
     return
   fi
+  # Prefer GHA RUNNER_ARCH: Git Bash on windows-11-arm can report x86_64.
+  if [ -n "${RUNNER_ARCH:-}" ]; then
+    case "$RUNNER_ARCH" in
+      X64|x64|amd64) printf 'x64' ;;
+      ARM64|arm64|aarch64) printf 'arm64' ;;
+      *)
+        echo "error: unsupported RUNNER_ARCH=$RUNNER_ARCH; set NODE_ARCH=x64|arm64" >&2
+        exit 1
+        ;;
+    esac
+    return
+  fi
   case "$(uname -m)" in
     x86_64|amd64) printf 'x64' ;;
     aarch64|arm64) printf 'arm64' ;;

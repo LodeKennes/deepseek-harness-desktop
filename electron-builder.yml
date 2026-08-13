@@ -41,13 +41,16 @@ linux:
   syncDesktopName: true
   synopsis: DeepSeek Harness desktop
   # deb first (primary, SUID chrome-sandbox); AppImage is portable extra.
+  # Host-native only: linux-x64 and linux-arm64 are separate artifacts.
   target:
     - target: deb
       arch:
         - x64
+        - arm64
     - target: AppImage
       arch:
         - x64
+        - arm64
   desktop:
     entry:
       Name: DeepSeek Harness
@@ -67,7 +70,7 @@ deb:
   packageName: deepseek-harness
   priority: optional
 
-# Separate arm64 artifacts (not universal). Unsigned v1; CSC is off.
+# Separate per-arch artifacts (not lipo/universal). Unsigned v1; CSC is off.
 mac:
   category: public.app-category.developer-tools
   icon: resources/icons/512.png
@@ -79,20 +82,24 @@ mac:
     - target: dmg
       arch:
         - arm64
+        - x64
     - target: zip
       arch:
         - arm64
+        - x64
 
-# x64 only until remaining-arch PR. Unsigned (CSC off in package.sh).
+# Host-native win-x64 / win-arm64. Unsigned (CSC off in package.sh).
 win:
   icon: resources/icons/icon.ico
   target:
     - target: nsis
       arch:
         - x64
+        - arm64
     - target: zip
       arch:
         - x64
+        - arm64
 
 # Assisted installer so the PATH checkbox and directory page exist.
 # perMachine: false + selectPerMachineByDefault: false → per-user default.

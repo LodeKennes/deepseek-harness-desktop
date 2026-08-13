@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Package the Electron shell + staged harness (Linux x64, macOS arm64, or Windows x64).
+# Package the Electron shell + staged harness for the host OS/arch.
+# Linux: deb + AppImage. macOS: dmg + zip (per-arch, not lipo). Windows: nsis + zip.
 set -euo pipefail
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -21,56 +22,54 @@ if [ ! -f versions.json ]; then
   exit 1
 fi
 
+# Prefer GHA RUNNER_ARCH: Git Bash on windows-11-arm can report x86_64 under emulation.
+detect_pack_arch() {
+  if [ -n "${RUNNER_ARCH:-}" ]; then
+    case "$RUNNER_ARCH" in
+      X64|x64|amd64) printf 'x64' ;;
+      ARM64|arm64|aarch64) printf 'arm64' ;;
+      *)
+        echo "error: unsupported RUNNER_ARCH=$RUNNER_ARCH (expected X64 or ARM64)" >&2
+        exit 1
+        ;;
+    esac
+    return
+  fi
+  case "$(uname -m)" in
+    x86_64|amd64) printf 'x64' ;;
+    aarch64|arm64) printf 'arm64' ;;
+    *)
+      echo "error: unsupported architecture $(uname -m) (expected x64 or arm64)" >&2
+      exit 1
+      ;;
+  esac
+}
+
 pack_os=
 pack_arch=
 builder_args=()
 artifact_glob=
 
+pack_arch=$(detect_pack_arch)
+
 case "$(uname -s)" in
   Linux*)
-    case "$(uname -m)" in
-      x86_64|amd64)
-        pack_os=linux
-        pack_arch=x64
-        builder_args=(--linux deb AppImage --x64)
-        artifact_glob='DeepSeek-Harness-*-linux-x64.*'
-        ;;
-      *)
-        echo "error: Linux packaging only supports x64 in this PR (got $(uname -m))" >&2
-        exit 1
-        ;;
-    esac
+    pack_os=linux
+    builder_args=(--linux deb AppImage --"$pack_arch")
+    artifact_glob="DeepSeek-Harness-*-linux-${pack_arch}.*"
     ;;
   Darwin*)
-    case "$(uname -m)" in
-      arm64)
-        pack_os=mac
-        pack_arch=arm64
-        builder_args=(--mac dmg zip --arm64)
-        artifact_glob='DeepSeek-Harness-*-mac-arm64.*'
-        ;;
-      *)
-        echo "error: macOS packaging only supports arm64 in this PR (got $(uname -m))" >&2
-        exit 1
-        ;;
-    esac
+    pack_os=mac
+    builder_args=(--mac dmg zip --"$pack_arch")
+    artifact_glob="DeepSeek-Harness-*-mac-${pack_arch}.*"
     ;;
   MINGW*|MSYS*|CYGWIN*|Windows_NT)
-    case "$(uname -m)" in
-      x86_64|amd64)
-        pack_os=win
-        pack_arch=x64
-        builder_args=(--win nsis zip --x64)
-        artifact_glob='DeepSeek-Harness-*-win-x64.*'
-        ;;
-      *)
-        echo "error: Windows packaging only supports x64 in this PR (got $(uname -m))" >&2
-        exit 1
-        ;;
-    esac
+    pack_os=win
+    builder_args=(--win nsis zip --"$pack_arch")
+    artifact_glob="DeepSeek-Harness-*-win-${pack_arch}.*"
     ;;
   *)
-    echo "error: scripts/package.sh supports Linux x64, macOS arm64, and Windows x64 only (got $(uname -s))" >&2
+    echo "error: scripts/package.sh supports Linux, macOS, and Windows only (got $(uname -s))" >&2
     exit 1
     ;;
 esac
