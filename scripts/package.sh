@@ -37,11 +37,25 @@ case "$(uname -m)" in
     ;;
 esac
 
-stage=${STAGE:-$repo_root/dist/runtime}
-case "$stage" in
-  /*) ;;
-  *) stage="$repo_root/$stage" ;;
-esac
+# extraResources.from is hardcoded to dist/runtime. A custom STAGE would
+# stage one tree and pack another.
+stage="$repo_root/dist/runtime"
+if [ -n "${STAGE:-}" ]; then
+  given=$STAGE
+  case "$given" in
+    /*) ;;
+    *) given="$repo_root/$given" ;;
+  esac
+  expected=$stage
+  if command -v realpath >/dev/null 2>&1 && realpath -m / >/dev/null 2>&1; then
+    given=$(realpath -m "$given")
+    expected=$(realpath -m "$expected")
+  fi
+  if [ "$given" != "$expected" ]; then
+    echo "error: package.sh packs extraResources from dist/runtime only; unset STAGE or set STAGE=dist/runtime (got $STAGE)" >&2
+    exit 1
+  fi
+fi
 
 posix_node="$stage/node/bin/node"
 if [ ! -f "$stage/sidecar-entry.mjs" ] || [ ! -f "$stage/lib/bin.js" ] || [ ! -x "$posix_node" ]; then

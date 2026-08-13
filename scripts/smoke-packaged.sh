@@ -108,8 +108,9 @@ mkdir -p "$HOME" "$DSH_HOME"
 # First heal can exceed 60s.
 ready_timeout=${SMOKE_READY_TIMEOUT:-180}
 
+# --no-sandbox is in the .desktop Exec, but extract-and-run does not use that file.
 xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24' \
-  "$appimage" --appimage-extract-and-run \
+  "$appimage" --appimage-extract-and-run --no-sandbox \
   >"$workdir/app.out" 2>"$workdir/app.err" &
 wrapper_pid=$!
 

@@ -5,7 +5,12 @@
   "private": true,
   "type": "module",
   "description": "Thin Electron window that supervises dsh web",
-  "author": "DeepSeek",
+  "author": "DeepSeek <opensource@deepseek.com>",
+  "homepage": "https://github.com/deepseek-ai/deepseek-harness",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deepseek-ai/deepseek-harness.git"
+  },
   "main": "out/main.js",
   "desktopName": "deepseek-harness",
   "packageManager": "pnpm@11.7.0",

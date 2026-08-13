@@ -49,7 +49,7 @@ HARNESS_CLONE_SSH=1 ./scripts/fetch-harness.sh
 
 ## Package (Linux x64)
 
-Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` when it is missing), plus `pnpm install` in this repo.
+Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` when it is missing), plus `pnpm install` in this repo. `STAGE` is not supported here: electron-builder `extraResources` is always `dist/runtime`. Unset `STAGE` or set it to that path.
 
 ```sh
 ./scripts/package.sh
