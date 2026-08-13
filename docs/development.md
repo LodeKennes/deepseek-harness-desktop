@@ -38,6 +38,15 @@ HTTPS (`harness.repository`) is the default.
 HARNESS_CLONE_SSH=1 ./scripts/fetch-harness.sh
 ```
 
+## Stage
+
+```sh
+./scripts/stage-runtime.sh
+# host smoke: node dist/runtime/sidecar-entry.mjs web --host 127.0.0.1 --port 13800
+```
+
+`STAGE` defaults to `dist/runtime`. The script deploys the existing `@deepseek-ai/dsh` package (no injected workspace member), materializes links, restores missing direct deps, downloads official Node, and copies `electron/sidecar-entry.mjs`.
+
 ## Rules
 
 - Never commit `.cache/`, `dist/`, `out/`, or `node_modules/`.
