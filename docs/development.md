@@ -47,16 +47,17 @@ HARNESS_CLONE_SSH=1 ./scripts/fetch-harness.sh
 
 `STAGE` defaults to `dist/runtime`. The script deploys the existing `@deepseek-ai/dsh` package (no injected workspace member), materializes links, restores missing direct deps, downloads official Node, and copies `electron/sidecar-entry.mjs`.
 
-## Package (Linux x64)
+## Package (Linux x64 / macOS arm64)
 
-Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` when it is missing), plus `pnpm install` in this repo. `STAGE` is not supported here: electron-builder `extraResources` is always `dist/runtime`. Unset `STAGE` or set it to that path.
+Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` when it is missing), plus `pnpm install` in this repo. `STAGE` is not supported here: electron-builder `extraResources` is always `dist/runtime`. Unset `STAGE` or set it to that path. The host OS/arch must match the target (no cross-compile).
 
 ```sh
 ./scripts/package.sh
-# artifacts: dist/installers/DeepSeek-Harness-<desktop.version>-linux-x64.{deb,AppImage}
+# Linux x64: dist/installers/DeepSeek-Harness-<desktop.version>-linux-x64.{deb,AppImage}
+# macOS arm64: dist/installers/DeepSeek-Harness-<desktop.version>-mac-arm64.{dmg,zip}
 ```
 
-electron-builder always runs with `--publish never`. `.deb` is the primary installer (SUID `chrome-sandbox`, no `--no-sandbox`). AppImage is a portable extra and is launched with `--no-sandbox`. Host smoke of the staged sidecar: `./scripts/smoke-sidecar.sh`. After packaging, `./scripts/smoke-packaged.sh` extract-and-runs the AppImage (no `libfuse2`) and unpacks the `.deb`.
+electron-builder always runs with `--publish never`. Linux: `.deb` is the primary installer (SUID `chrome-sandbox`, no `--no-sandbox`); AppImage is a portable extra and is launched with `--no-sandbox`. macOS: DMG (drag to Applications) + zip; `stage-runtime.sh` copies `node-pty`'s `spawn-helper` next to the bundled Node as `node/bin/node-spawn-helper`. Host smoke of the staged sidecar: `./scripts/smoke-sidecar.sh`. After packaging, `./scripts/smoke-packaged.sh` extract-and-runs the AppImage (no `libfuse2`) and unpacks the `.deb` on Linux, or unzips the macOS zip, asserts the helper, and orphan-kills the `.app`.
 
 ## Rules
 

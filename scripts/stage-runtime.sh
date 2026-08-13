@@ -124,6 +124,59 @@ stage_landlock_launcher() {
   exit 1
 }
 
+# node-pty's patched lookup prefers DSH_NODE_PTY_SPAWN_HELPER, then
+# process.execPath + '-spawn-helper'. Stage as node/bin/node-spawn-helper.
+stage_spawn_helper() {
+  local clone=$1 stage=$2 arch=$3
+  local dest="$stage/node/bin/node-spawn-helper"
+  local source=
+  local candidates=(
+    "$stage/node_modules/node-pty/prebuilds/darwin-${arch}/spawn-helper"
+    "$stage/node_modules/@deepseek-ai/dsh-subprocess-local/node_modules/node-pty/prebuilds/darwin-${arch}/spawn-helper"
+    "$clone/packages/subprocess/subprocess-local/node_modules/node-pty/prebuilds/darwin-${arch}/spawn-helper"
+    "$clone/node_modules/node-pty/prebuilds/darwin-${arch}/spawn-helper"
+    "$stage/node_modules/node-pty/build/Release/spawn-helper"
+    "$clone/packages/subprocess/subprocess-local/node_modules/node-pty/build/Release/spawn-helper"
+  )
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if [ -f "$candidate" ]; then
+      source=$candidate
+      break
+    fi
+  done
+
+  if [ -z "$source" ]; then
+    local roots=()
+    [ -d "$stage/node_modules" ] && roots+=("$stage/node_modules")
+    [ -d "$clone/packages/subprocess/subprocess-local/node_modules" ] &&
+      roots+=("$clone/packages/subprocess/subprocess-local/node_modules")
+    [ -d "$clone/node_modules" ] && roots+=("$clone/node_modules")
+    if [ "${#roots[@]}" -gt 0 ]; then
+      source=$(
+        find "${roots[@]}" \
+          \( -path "*/node-pty/prebuilds/darwin-${arch}/spawn-helper" \
+          -o -path "*/node-pty/build/Release/spawn-helper" \) \
+          -type f -print -quit 2>/dev/null || true
+      )
+    fi
+  fi
+
+  if [ -z "$source" ] || [ ! -f "$source" ]; then
+    echo "error: node-pty spawn-helper missing for darwin-${arch} (looked in staged and clone node_modules)" >&2
+    exit 1
+  fi
+
+  mkdir -p "$(dirname "$dest")"
+  cp "$source" "$dest"
+  chmod 0755 "$dest"
+  if [ ! -x "$dest" ]; then
+    echo "error: $dest is not executable after chmod 0755" >&2
+    exit 1
+  fi
+  echo "stage-runtime: spawn-helper $source -> $dest"
+}
+
 # Absolute path with . / .. collapsed so STAGE=. or STAGE=.. cannot bypass rm -rf guards.
 canonicalize() {
   local p=$1
@@ -411,10 +464,14 @@ if [ ! -d "$stage/node_modules/$builtin" ]; then
 fi
 
 # manylinux pty.node + landlock launcher; skip on non-Linux hosts.
+# macOS: copy node-pty spawn-helper next to bundled node (node-pty patch).
 case "$(uname -s)" in
   Linux*)
     "$script_dir/rebuild-node-pty-manylinux.sh" "$clone" "$stage"
     stage_landlock_launcher "$clone" "$stage" "$arch"
+    ;;
+  Darwin*)
+    stage_spawn_helper "$clone" "$stage" "$arch"
     ;;
 esac
 

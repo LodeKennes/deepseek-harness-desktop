@@ -66,3 +66,18 @@ appImage:
 deb:
   packageName: deepseek-harness
   priority: optional
+
+# Separate arm64 artifacts (not universal). Ad-hoc; CSC is off.
+mac:
+  category: public.app-category.developer-tools
+  icon: resources/icons/512.png
+  identity: null
+  gatekeeperAssess: false
+  notarize: false
+  target:
+    - target: dmg
+      arch:
+        - arm64
+    - target: zip
+      arch:
+        - arm64
