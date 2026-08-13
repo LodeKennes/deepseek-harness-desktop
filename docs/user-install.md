@@ -35,16 +35,18 @@ ln -s "/Applications/DeepSeek Harness.app/Contents/Resources/harness/bin/dsh" /u
 
 | Format | Role |
 | --- | --- |
-| **`.deb`** | **Primary.** Zero extra runtime deps. electron-builder installs the Chromium SUID `chrome-sandbox` helper. Prefer this. |
+| **`.deb`** | **Primary.** No extra runtimes (Node, pnpm, Python, C++ toolchain). electron-builder installs the Chromium SUID `chrome-sandbox` helper. Prefer this. |
 | **AppImage** | Portable extra. **Not** zero-dep. Cannot ship a working SUID sandbox helper, so it is launched with `--no-sandbox`. The HTTP API is still bound to `127.0.0.1` only. |
 
 ### .deb
 
 ```sh
-sudo dpkg -i DeepSeek-Harness-*-linux-*.deb
+sudo apt install ./DeepSeek-Harness-*-linux-*.deb
 ```
 
-The package may install `/usr/bin/dsh` only if that name is free; otherwise it installs `/usr/bin/dsh-desktop` so an existing CLI is not overwritten.
+`apt install ./…` pulls the package's shared-library Depends (GTK, NSS, …). `dpkg -i` alone will not.
+
+The desktop binary is `deepseek-harness` (package name `deepseek-harness`). The bundled CLI lives inside the app tree at `resources/harness/bin/dsh`. The package does **not** install `/usr/bin/dsh` or `/usr/bin/dsh-desktop`.
 
 ### AppImage
 
@@ -65,10 +67,11 @@ Desktop and CLI share the same Harness home (`~/.dsh` / `%USERPROFILE%\.dsh`, or
 
 **Do not run CLI `dsh` and the desktop app at the same time.** Each boot heals `$DSH_HOME/profiles/node_modules` junctions/symlinks to *its* install. Last boot wins. Running both concurrently can leave plugins pointing at the wrong tree.
 
-Default sidecar working directory (sandbox default until you pick a workspace):
+Default sidecar working directory (sandbox default until you pick a workspace), matching `resolveDefaultWorkspace()`:
 
-1. `~/Documents/DeepSeek Harness` when the OS Documents folder is not `$HOME`
-2. `~/.dsh/default-workspace` as last resort (some Linux XDG setups set Documents = `$HOME`)
+1. `$DOCUMENTS/DeepSeek Harness` when the OS Documents folder is not `$HOME`
+2. `~/Documents/DeepSeek Harness` (explicit `Documents` segment) when Documents is `$HOME` (some Linux XDG setups)
+3. `~/.dsh/default-workspace` only if those candidates are `$HOME` or `$DSH_HOME`
 
 Never the install directory, never `$HOME`, never `$DSH_HOME` itself.
 
