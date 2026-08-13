@@ -359,6 +359,34 @@ if [ ! -d "$stage/node_modules/$builtin" ]; then
   exit 1
 fi
 
+# manylinux pty.node + landlock launcher; skip on non-Linux hosts.
+case "$(uname -s)" in
+  Linux*)
+    "$script_dir/rebuild-node-pty-manylinux.sh" "$clone" "$stage"
+    landlock_pkg="@deepseek-ai/node-addon-landlock-run-linux-${arch}"
+    landlock_dir=
+    if [ -d "$stage/node_modules/$landlock_pkg" ]; then
+      landlock_dir="$stage/node_modules/$landlock_pkg"
+    elif [ -d "$stage/node_modules/@deepseek-ai/node-addon-landlock-run/node_modules/$landlock_pkg" ]; then
+      landlock_dir="$stage/node_modules/@deepseek-ai/node-addon-landlock-run/node_modules/$landlock_pkg"
+    fi
+    if [ -z "$landlock_dir" ]; then
+      echo "error: $landlock_pkg missing under $stage/node_modules" >&2
+      exit 1
+    fi
+    landlock_bin="$landlock_dir/bin/landlock-run"
+    if [ ! -f "$landlock_bin" ]; then
+      echo "error: $landlock_pkg is present but launcher is missing: $landlock_bin" >&2
+      exit 1
+    fi
+    if [ ! -x "$landlock_bin" ]; then
+      echo "error: $landlock_pkg launcher is not executable: $landlock_bin" >&2
+      exit 1
+    fi
+    echo "stage-runtime: landlock launcher $landlock_bin"
+    ;;
+esac
+
 leftover=$(list_links "$stage")
 leftover=$(printf '%s\n' "$leftover" | sed '/^$/d')
 if [ -n "$leftover" ]; then
