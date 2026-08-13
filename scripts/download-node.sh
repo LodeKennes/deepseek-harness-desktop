@@ -97,16 +97,67 @@ case "$os" in
     ;;
 esac
 
+# Absolute path with . / .. collapsed so DEST=. or DEST=.. cannot bypass rm -rf guards.
+canonicalize() {
+  local p=$1
+  case "$p" in
+    /*) ;;
+    *) p="$repo_root/$p" ;;
+  esac
+  if command -v realpath >/dev/null 2>&1 && realpath -m / >/dev/null 2>&1; then
+    realpath -m "$p"
+    return
+  fi
+  local suffix=
+  local probe=$p
+  while [ ! -d "$probe" ]; do
+    if [ "$probe" = "/" ]; then
+      break
+    fi
+    if [ -n "$suffix" ]; then
+      suffix="$(basename -- "$probe")/$suffix"
+    else
+      suffix=$(basename -- "$probe")
+    fi
+    probe=$(dirname -- "$probe")
+  done
+  local prefix
+  prefix=$(CDPATH='' cd -- "$probe" && pwd -P)
+  local IFS=/
+  local part
+  for part in $suffix; do
+    [ -z "$part" ] && continue
+    case "$part" in
+      .) ;;
+      ..)
+        if [ "$prefix" != "/" ]; then
+          prefix=$(dirname -- "$prefix")
+        fi
+        ;;
+      *) prefix="$prefix/$part" ;;
+    esac
+  done
+  printf '%s\n' "$prefix"
+}
+
+unsafe_rm_target() {
+  local dest=$1 root=$2
+  [ "$dest" = "/" ] && return 0
+  [ "$dest" = "$root" ] && return 0
+  case "$root" in
+    "$dest"/*) return 0 ;;
+  esac
+  return 1
+}
+
 dest=${1:-}
 if [ -z "$dest" ]; then
   dest="${STAGE:-$repo_root/dist/runtime}/node"
 fi
-case "$dest" in
-  /*) ;;
-  *) dest="$repo_root/$dest" ;;
-esac
+dest=$(canonicalize "$dest")
+repo_root=$(canonicalize "$repo_root")
 
-if [ "$dest" = "/" ] || [ "$dest" = "$repo_root" ]; then
+if unsafe_rm_target "$dest" "$repo_root"; then
   echo "error: refusing to write Node into $dest" >&2
   exit 1
 fi

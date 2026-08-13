@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Deploy @deepseek-ai/dsh into $STAGE, official Node, and the sidecar supervisor.
-# Does not inject a workspace member after the frozen lockfile.
 set -euo pipefail
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -13,10 +12,6 @@ need_cmd() {
     exit 1
   fi
 }
-
-need_cmd jq
-need_cmd git
-need_cmd pnpm
 
 if [ ! -f versions.json ]; then
   echo "error: versions.json not found in $repo_root" >&2
@@ -78,34 +73,171 @@ copy_package() {
   fi
 }
 
+# Absolute path with . / .. collapsed so STAGE=. or STAGE=.. cannot bypass rm -rf guards.
+canonicalize() {
+  local p=$1
+  case "$p" in
+    /*) ;;
+    *) p="$repo_root/$p" ;;
+  esac
+  if command -v realpath >/dev/null 2>&1 && realpath -m / >/dev/null 2>&1; then
+    realpath -m "$p"
+    return
+  fi
+  local suffix=
+  local probe=$p
+  while [ ! -d "$probe" ]; do
+    if [ "$probe" = "/" ]; then
+      break
+    fi
+    if [ -n "$suffix" ]; then
+      suffix="$(basename -- "$probe")/$suffix"
+    else
+      suffix=$(basename -- "$probe")
+    fi
+    probe=$(dirname -- "$probe")
+  done
+  local prefix
+  prefix=$(CDPATH='' cd -- "$probe" && pwd -P)
+  local IFS=/
+  local part
+  for part in $suffix; do
+    [ -z "$part" ] && continue
+    case "$part" in
+      .) ;;
+      ..)
+        if [ "$prefix" != "/" ]; then
+          prefix=$(dirname -- "$prefix")
+        fi
+        ;;
+      *) prefix="$prefix/$part" ;;
+    esac
+  done
+  printf '%s\n' "$prefix"
+}
+
+# True if dest is / or would delete root (dest equals root or is an ancestor).
+unsafe_rm_target() {
+  local dest=$1 root=$2
+  [ "$dest" = "/" ] && return 0
+  [ "$dest" = "$root" ] && return 0
+  case "$root" in
+    "$dest"/*) return 0 ;;
+  esac
+  return 1
+}
+
+is_windows() {
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*|Windows_NT) return 0 ;;
+  esac
+  return 1
+}
+
+# Symlinks, plus Windows junctions / reparse points that find -type l misses.
+list_links() {
+  local dir=$1
+  if is_windows; then
+    local arg=$dir
+    if command -v cygpath >/dev/null 2>&1; then
+      arg=$(cygpath -w "$dir")
+    fi
+    if command -v node >/dev/null 2>&1; then
+      local out
+      out=$(LINK_ROOT="$arg" node --input-type=module <<'JS'
+import { lstat, readdir } from 'node:fs/promises'
+import { join } from 'node:path'
+const root = process.env.LINK_ROOT
+async function walk(dir) {
+  let entries
+  try {
+    entries = await readdir(dir, { withFileTypes: true })
+  } catch {
+    return
+  }
+  for (const ent of entries) {
+    const p = join(dir, ent.name)
+    let st
+    try {
+      st = await lstat(p)
+    } catch {
+      continue
+    }
+    if (st.isSymbolicLink()) {
+      process.stdout.write(`${p}\n`)
+      continue
+    }
+    if (st.isDirectory()) await walk(p)
+  }
+}
+await walk(root)
+JS
+      ) || true
+      if [ -n "$out" ] && command -v cygpath >/dev/null 2>&1; then
+        while IFS= read -r line; do
+          [ -n "$line" ] && cygpath -u "$line"
+        done <<< "$out"
+      else
+        printf '%s\n' "$out"
+      fi
+      return
+    fi
+    if command -v powershell.exe >/dev/null 2>&1; then
+      powershell.exe -NoProfile -Command \
+        "Get-ChildItem -LiteralPath '$arg' -Force -Recurse -ErrorAction SilentlyContinue | Where-Object { \$_.LinkType -eq 'Junction' -or \$_.LinkType -eq 'SymbolicLink' } | ForEach-Object { \$_.FullName }" \
+        | while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            if command -v cygpath >/dev/null 2>&1; then
+              cygpath -u "$line"
+            else
+              printf '%s\n' "$line"
+            fi
+          done
+      return
+    fi
+  fi
+  find "$dir" -type l -print || true
+}
+
 stage=${STAGE:-$repo_root/dist/runtime}
 clone=${CLONE:-$repo_root/.cache/harness}
-case "$stage" in
-  /*) ;;
-  *) stage="$repo_root/$stage" ;;
-esac
-case "$clone" in
-  /*) ;;
-  *) clone="$repo_root/$clone" ;;
-esac
+stage=$(canonicalize "$stage")
+clone=$(canonicalize "$clone")
+repo_root=$(canonicalize "$repo_root")
 
-if [ -z "$stage" ] || [ "$stage" = "/" ] || [ "$stage" = "$repo_root" ] || [ "$stage" = "$clone" ]; then
+if [ -z "$stage" ] || unsafe_rm_target "$stage" "$repo_root" || unsafe_rm_target "$stage" "$clone"; then
   echo "error: refusing to stage into $stage" >&2
   exit 1
 fi
 
-if [ ! -f "$clone/apps/cli/lib/bin.js" ] || [ ! -d "$clone/node_modules" ]; then
-  echo "stage-runtime: harness not built; running build-harness.sh"
-  "$script_dir/build-harness.sh"
-else
-  "$script_dir/fetch-harness.sh"
+need_cmd jq
+need_cmd git
+need_cmd pnpm
+
+prev_sha=
+if [ -d "$clone/.git" ]; then
+  prev_sha=$(git -C "$clone" rev-parse HEAD)
 fi
+
+"$script_dir/fetch-harness.sh"
 
 sha=$(jq -r .harness.sha versions.json)
 current=$(git -C "$clone" rev-parse HEAD)
 if [ "$current" != "$sha" ]; then
   echo "error: $clone HEAD is $current, expected $sha" >&2
   exit 1
+fi
+
+need_build=0
+if [ ! -f "$clone/apps/cli/lib/bin.js" ] || [ ! -d "$clone/node_modules" ]; then
+  need_build=1
+elif [ -n "$prev_sha" ] && [ "$prev_sha" != "$current" ]; then
+  need_build=1
+fi
+
+if [ "$need_build" -eq 1 ]; then
+  echo "stage-runtime: building harness at $sha"
+  "$script_dir/build-harness.sh"
 fi
 
 if [ ! -f "$clone/apps/cli/lib/bin.js" ]; then
@@ -172,7 +304,32 @@ rm -f "$stage/bin/dsh" "$stage/bin/dsh.cmd"
 cat >"$stage/bin/dsh" <<'EOF'
 #!/bin/sh
 set -eu
-here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# Follow $0 so `ln -s …/harness/bin/dsh /usr/local/bin/dsh` still finds ../node.
+if command -v realpath >/dev/null 2>&1; then
+  here=$(dirname -- "$(realpath "$0")")
+else
+  target=$0
+  case $target in
+    /*) ;;
+    */*) target=$(CDPATH='' cd -- "$(dirname -- "$target")" && pwd)/$(basename -- "$target") ;;
+    *)
+      found=$(command -v -- "$target" 2>/dev/null || true)
+      if [ -n "$found" ]; then
+        target=$found
+      else
+        target=$(CDPATH='' cd -- "$(dirname -- "$target")" && pwd)/$(basename -- "$target")
+      fi
+      ;;
+  esac
+  while [ -L "$target" ]; do
+    dest=$(readlink "$target")
+    case $dest in
+      /*) target=$dest ;;
+      *) target=$(CDPATH='' cd -- "$(dirname -- "$target")" && pwd)/$dest ;;
+    esac
+  done
+  here=$(CDPATH='' cd -- "$(dirname -- "$target")" && pwd)
+fi
 exec "$here/../node/bin/node" "$here/../lib/bin.js" "$@"
 EOF
 chmod 755 "$stage/bin/dsh"
@@ -202,7 +359,8 @@ if [ ! -d "$stage/node_modules/$builtin" ]; then
   exit 1
 fi
 
-leftover=$(find "$stage" -type l -print || true)
+leftover=$(list_links "$stage")
+leftover=$(printf '%s\n' "$leftover" | sed '/^$/d')
 if [ -n "$leftover" ]; then
   echo "error: symlinks remain under $stage:" >&2
   printf '%s\n' "$leftover" >&2

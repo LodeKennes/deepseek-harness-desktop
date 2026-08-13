@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-/**
- * Packaging-repo supervisor for the official-Node sidecar.
- * No Electron imports. Staged next to lib/bin.js as sidecar-entry.mjs.
- */
 import { fileURLToPath } from 'node:url'
 import readline from 'node:readline'
 
