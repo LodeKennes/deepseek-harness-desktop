@@ -1,4 +1,5 @@
-import { app, BrowserWindow, Menu, shell } from 'electron'
+import type { ChildProcess } from 'node:child_process'
+import { app, BrowserWindow, Menu } from 'electron'
 import { appendLog, formatLogLine } from './logs.js'
 import {
   SidecarError,
@@ -12,12 +13,11 @@ import { pickListenPort } from './port.js'
 import { createMainWindow, loadSidecar, showErrorPage, showStatusPage } from './window.js'
 import { ensureDefaultWorkspace, resolveDefaultWorkspace } from './workspace.js'
 
-const RELEASES_URL = 'https://github.com/deepseek-ai/deepseek-harness/releases'
-
 let mainWindow: BrowserWindow | null = null
 let sidecar: SidecarHandle | null = null
 let quitting = false
 let starting = false
+const expectedExits = new WeakSet<ChildProcess>()
 
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
@@ -44,7 +44,7 @@ if (!gotTheLock) {
     quitting = true
     void (async () => {
       try {
-        if (sidecar) await sidecar.stop()
+        if (sidecar) await stopSidecar(sidecar)
         else await stopActiveSidecar()
       } catch (err) {
         appendLog('main.log', formatLogLine(`sidecar stop failed: ${stringifyError(err)}`))
@@ -63,19 +63,13 @@ function installMenu(): void {
     { role: 'editMenu' },
     { role: 'viewMenu' },
     { role: 'windowMenu' },
-    {
-      role: 'help',
-      submenu: [
-        {
-          label: 'Releases…',
-          click: () => {
-            void shell.openExternal(RELEASES_URL)
-          },
-        },
-      ],
-    },
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
+
+async function stopSidecar(handle: SidecarHandle): Promise<void> {
+  expectedExits.add(handle.child)
+  await handle.stop()
 }
 
 async function launch(): Promise<void> {
@@ -114,7 +108,7 @@ async function startSession(): Promise<void> {
   sidecar = handle
   handle.child.once('exit', (code, signal) => {
     appendLog('main.log', formatLogLine(`sidecar exit code=${code} signal=${signal}`))
-    if (quitting) return
+    if (quitting || expectedExits.has(handle.child)) return
     const tail = handle.stderrTail.slice()
     if (sidecar === handle) sidecar = null
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -127,7 +121,7 @@ async function startSession(): Promise<void> {
   })
 
   if (!mainWindow || mainWindow.isDestroyed()) {
-    await handle.stop()
+    await stopSidecar(handle)
     return
   }
   loadSidecar(mainWindow, handle.url)
@@ -140,7 +134,7 @@ async function restart(): Promise<void> {
     if (sidecar) {
       const previous = sidecar
       sidecar = null
-      await previous.stop()
+      await stopSidecar(previous)
     } else {
       await stopActiveSidecar()
     }

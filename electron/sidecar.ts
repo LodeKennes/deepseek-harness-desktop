@@ -133,15 +133,25 @@ async function quitChild(child: ChildProcess, timeoutMs: number): Promise<void> 
   try {
     child.stdin?.write('quit\n')
   } catch {
-    child.kill()
+    forceKill(child)
   }
 
   const exited = await waitForExit(child, timeoutMs)
   if (!exited) {
-    child.kill()
-    await waitForExit(child, 1000)
+    forceKill(child)
+    const dead = await waitForExit(child, 5000)
+    if (!dead) {
+      if (activeStop) activeStop = null
+      throw new SidecarError('sidecar did not exit after forced kill')
+    }
   }
   if (activeStop) activeStop = null
+}
+
+function forceKill(child: ChildProcess): void {
+  // win32 child.kill() is TerminateProcess; SIGTERM would be a no-op after quit.
+  if (process.platform === 'win32') child.kill()
+  else child.kill('SIGKILL')
 }
 
 function waitForExit(child: ChildProcess, ms: number): Promise<boolean> {
