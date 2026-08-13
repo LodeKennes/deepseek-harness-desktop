@@ -1,0 +1,21 @@
+{
+  "name": "deepseek-harness-desktop",
+  "productName": "DeepSeek Harness",
+  "version": "0.1.0-beta.1",
+  "private": true,
+  "type": "module",
+  "description": "Thin Electron window that supervises dsh web",
+  "main": "out/main.js",
+  "packageManager": "pnpm@11.7.0",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "tsc && electron .",
+    "test": "tsc && node --test out/env.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "electron": "37.2.6",
+    "typescript": "^5.9.2"
+  }
+}

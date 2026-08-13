@@ -1,0 +1,162 @@
+import { BrowserWindow, shell } from 'electron'
+import { fileURLToPath } from 'node:url'
+
+// Reserved .invalid host so Restart is a normal https navigation we intercept.
+export const RESTART_URL = 'https://dsh-desktop.invalid/restart'
+
+const origins = new WeakMap<BrowserWindow, string>()
+const restartHooks = new WeakMap<BrowserWindow, () => void>()
+
+export interface ErrorPageOptions {
+  title: string
+  detail: string
+  stderr?: readonly string[]
+}
+
+export function createMainWindow(hooks: { onRestart: () => void }): BrowserWindow {
+  const preload = fileURLToPath(new URL('./preload.js', import.meta.url))
+  const win = new BrowserWindow({
+    title: 'DeepSeek Harness',
+    width: 1280,
+    height: 800,
+    minWidth: 800,
+    minHeight: 560,
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      preload,
+    },
+  })
+
+  restartHooks.set(win, hooks.onRestart)
+  attachNavigationLock(win)
+  win.once('ready-to-show', () => {
+    if (!win.isDestroyed()) win.show()
+  })
+  return win
+}
+
+export function setSidecarOrigin(win: BrowserWindow, origin: string | undefined): void {
+  if (origin === undefined) origins.delete(win)
+  else origins.set(win, origin)
+}
+
+export function loadSidecar(win: BrowserWindow, url: URL): void {
+  setSidecarOrigin(win, url.origin)
+  void win.loadURL(url.href)
+}
+
+export function showStatusPage(win: BrowserWindow, title: string, detail: string): void {
+  setSidecarOrigin(win, undefined)
+  void win.loadURL(toDataUrl(renderShellHtml({ title, detail, restart: false })))
+}
+
+export function showErrorPage(win: BrowserWindow, opts: ErrorPageOptions): void {
+  setSidecarOrigin(win, undefined)
+  void win.loadURL(toDataUrl(renderShellHtml({ ...opts, restart: true })))
+}
+
+function attachNavigationLock(win: BrowserWindow): void {
+  win.webContents.session.setPermissionRequestHandler((_wc, _permission, callback) => {
+    callback(false)
+  })
+
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    void openExternalIfAllowed(url)
+    return { action: 'deny' }
+  })
+
+  const onNavigate = (event: Electron.Event & { url: string }) => {
+    if (handleRestartUrl(win, event.url)) {
+      event.preventDefault()
+      return
+    }
+    if (isAllowedNavigation(event.url, origins.get(win))) return
+    event.preventDefault()
+    void openExternalIfAllowed(event.url)
+  }
+
+  win.webContents.on('will-navigate', onNavigate)
+  win.webContents.on('will-redirect', onNavigate)
+  win.webContents.on('will-frame-navigate', onNavigate)
+}
+
+function handleRestartUrl(win: BrowserWindow, url: string): boolean {
+  if (url !== RESTART_URL && !url.startsWith(`${RESTART_URL}?`) && !url.startsWith(`${RESTART_URL}#`)) {
+    return false
+  }
+  restartHooks.get(win)?.()
+  return true
+}
+
+function isAllowedNavigation(url: string, sidecarOrigin: string | undefined): boolean {
+  if (url.startsWith('data:text/html')) return true
+  if (url === 'about:blank') return true
+  if (!sidecarOrigin) return false
+  try {
+    return new URL(url).origin === sidecarOrigin
+  } catch {
+    return false
+  }
+}
+
+async function openExternalIfAllowed(url: string): Promise<void> {
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return
+  } catch {
+    return
+  }
+  await shell.openExternal(url)
+}
+
+function toDataUrl(html: string): string {
+  return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
+}
+
+function renderShellHtml(opts: ErrorPageOptions & { restart: boolean }): string {
+  const stderr = (opts.stderr ?? []).join('\n')
+  const restart = opts.restart
+    ? `<p><a class="restart" href="${RESTART_URL}">Restart</a></p>`
+    : ''
+  const log = opts.stderr && opts.stderr.length > 0
+    ? `<h2>Last sidecar output</h2><pre>${escapeHtml(stderr)}</pre>`
+    : ''
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(opts.title)}</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 48px 32px; line-height: 1.45; }
+    main { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 1.4rem; margin: 0 0 12px; }
+    p { margin: 0 0 16px; }
+    pre { white-space: pre-wrap; word-break: break-word; padding: 12px; border-radius: 8px;
+          background: color-mix(in srgb, currentColor 8%, transparent); font-size: 12px; }
+    a.restart { display: inline-block; padding: 8px 16px; border-radius: 8px; text-decoration: none;
+                background: #2563eb; color: #fff; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>${escapeHtml(opts.title)}</h1>
+    <p>${escapeHtml(opts.detail)}</p>
+    ${restart}
+    ${log}
+  </main>
+</body>
+</html>`
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}

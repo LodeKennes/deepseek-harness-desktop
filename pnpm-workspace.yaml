@@ -1,0 +1,3 @@
+# Electron's postinstall downloads the platform binary.
+allowBuilds:
+  electron: true
