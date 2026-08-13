@@ -73,6 +73,57 @@ copy_package() {
   fi
 }
 
+# Workspace checkout has no launcher (packages/*/bin/ is gitignored). Build
+# with musl-gcc when present, else reuse a prebuilt; then copy into STAGE.
+stage_landlock_launcher() {
+  local clone=$1 stage=$2 arch=$3
+  local landlock_pkg="@deepseek-ai/node-addon-landlock-run-linux-${arch}"
+  local dests=()
+  if [ -d "$stage/node_modules/$landlock_pkg" ]; then
+    dests+=("$stage/node_modules/$landlock_pkg")
+  fi
+  if [ -d "$stage/node_modules/@deepseek-ai/node-addon-landlock-run/node_modules/$landlock_pkg" ]; then
+    dests+=("$stage/node_modules/@deepseek-ai/node-addon-landlock-run/node_modules/$landlock_pkg")
+  fi
+  if [ "${#dests[@]}" -eq 0 ]; then
+    echo "error: $landlock_pkg missing under $stage/node_modules" >&2
+    exit 1
+  fi
+
+  local built="$clone/native/landlock-run/packages/linux-${arch}/bin/landlock-run"
+  if [ ! -f "$built" ] && command -v musl-gcc >/dev/null 2>&1; then
+    echo "stage-runtime: building landlock-run with musl-gcc"
+    (
+      cd "$clone"
+      pnpm --filter @deepseek-ai/node-addon-landlock-run-workspace build:native
+    )
+  fi
+
+  if [ -f "$built" ]; then
+    local dest
+    for dest in "${dests[@]}"; do
+      mkdir -p "$dest/bin"
+      cp "$built" "$dest/bin/landlock-run"
+      chmod 755 "$dest/bin/landlock-run"
+    done
+  fi
+
+  local dest landlock_bin found=
+  for dest in "${dests[@]}"; do
+    landlock_bin="$dest/bin/landlock-run"
+    if [ -f "$landlock_bin" ] && [ -x "$landlock_bin" ]; then
+      echo "stage-runtime: landlock launcher $landlock_bin"
+      found=1
+    fi
+  done
+  if [ -n "$found" ]; then
+    return 0
+  fi
+
+  echo "error: $landlock_pkg has no bin/landlock-run; need musl-tools (musl-gcc) or a prebuilt platform package" >&2
+  exit 1
+}
+
 # Absolute path with . / .. collapsed so STAGE=. or STAGE=.. cannot bypass rm -rf guards.
 canonicalize() {
   local p=$1
@@ -363,27 +414,7 @@ fi
 case "$(uname -s)" in
   Linux*)
     "$script_dir/rebuild-node-pty-manylinux.sh" "$clone" "$stage"
-    landlock_pkg="@deepseek-ai/node-addon-landlock-run-linux-${arch}"
-    landlock_dir=
-    if [ -d "$stage/node_modules/$landlock_pkg" ]; then
-      landlock_dir="$stage/node_modules/$landlock_pkg"
-    elif [ -d "$stage/node_modules/@deepseek-ai/node-addon-landlock-run/node_modules/$landlock_pkg" ]; then
-      landlock_dir="$stage/node_modules/@deepseek-ai/node-addon-landlock-run/node_modules/$landlock_pkg"
-    fi
-    if [ -z "$landlock_dir" ]; then
-      echo "error: $landlock_pkg missing under $stage/node_modules" >&2
-      exit 1
-    fi
-    landlock_bin="$landlock_dir/bin/landlock-run"
-    if [ ! -f "$landlock_bin" ]; then
-      echo "error: $landlock_pkg is present but launcher is missing: $landlock_bin" >&2
-      exit 1
-    fi
-    if [ ! -x "$landlock_bin" ]; then
-      echo "error: $landlock_pkg launcher is not executable: $landlock_bin" >&2
-      exit 1
-    fi
-    echo "stage-runtime: landlock launcher $landlock_bin"
+    stage_landlock_launcher "$clone" "$stage" "$arch"
     ;;
 esac
 
