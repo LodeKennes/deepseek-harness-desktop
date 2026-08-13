@@ -1,14 +1,16 @@
 # DeepSeek Harness
 
+**Unsigned developer-preview builds.** Desktop artifacts are not code-signed or notarized. Windows SmartScreen and macOS Gatekeeper will warn; Linux packages have no signature. Treat the OS trust UI as correct. There is no auto-update.
+
 Thin standalone packaging repository for **DeepSeek Harness** desktop installers.
 
 This repo does **not** contain the harness source, a git submodule, or vendored packages. CI (and local development) clones a pinned revision of [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness) and builds installers from that SHA. The pin lives in [`versions.json`](versions.json).
 
-## Status
+End users do not need Node.js, pnpm, Python, or a C++ toolchain for the primary installers. Installed size is ~0.5 GB.
 
-Unsigned developer-preview. Desktop installers are not published yet. Once they exist, end users will not need Node.js, pnpm, Python, or a C++ toolchain.
-
-See [docs/development.md](docs/development.md) for how the pin is fetched and built.
+- [Install (per OS, shared `~/.dsh`, plugins)](docs/user-install.md)
+- [Signing runbook (follow-up secrets; not wired in v1)](docs/signing.md)
+- [Development (fetch / build / package)](docs/development.md)
 
 ## Version pin
 
