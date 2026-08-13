@@ -59,6 +59,17 @@ Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` 
 
 electron-builder always runs with `--publish never`. Linux: `.deb` is the primary installer (SUID `chrome-sandbox`, no `--no-sandbox`); AppImage is a portable extra and is launched with `--no-sandbox`. macOS: DMG (drag to Applications) + zip; `stage-runtime.sh` copies `node-pty`'s `spawn-helper` next to the bundled Node as `node/bin/node-spawn-helper`. Host smoke of the staged sidecar: `./scripts/smoke-sidecar.sh`. After packaging, `./scripts/smoke-packaged.sh` extract-and-runs the AppImage (no `libfuse2`) and unpacks the `.deb` on Linux, or unzips the macOS zip, asserts the helper, and orphan-kills the `.app`.
 
+## Package (Windows x64)
+
+Same `package.sh` on a Windows host (Git Bash). Official Node is staged at `dist/runtime/node/node.exe` (not `node/bin/node`). Artifacts are a per-user NSIS installer (`oneClick: false`, install-dir page, PATH checkbox **unchecked** by default) and a portable zip.
+
+```sh
+./scripts/package.sh
+# artifacts: dist/installers/DeepSeek-Harness-<desktop.version>-win-x64.{exe,zip}
+```
+
+Host smoke of the staged sidecar (quit pipe): `./scripts/smoke-sidecar.sh`. After packaging, `./scripts/smoke-windows.sh` unzips the portable build, launches it, then kills Electron (not `/T`) and asserts `node.exe` is gone.
+
 ## Rules
 
 - Never commit `.cache/`, `dist/`, `out/`, or `node_modules/`.

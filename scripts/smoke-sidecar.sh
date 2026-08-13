@@ -13,7 +13,20 @@ need_cmd() {
   fi
 }
 
-need_cmd curl
+is_windows() {
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*|Windows_NT) return 0 ;;
+  esac
+  return 1
+}
+
+win_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$1"
+  else
+    printf '%s' "$1"
+  fi
+}
 
 stage=${STAGE:-$repo_root/dist/runtime}
 case "$stage" in
@@ -22,11 +35,17 @@ case "$stage" in
 esac
 
 entry="$stage/sidecar-entry.mjs"
-if [ -x "$stage/node/bin/node" ]; then
+if [ -f "$stage/node/node.exe" ]; then
+  node_bin="$stage/node/node.exe"
+elif [ -x "$stage/node/bin/node" ]; then
   node_bin="$stage/node/bin/node"
 else
   need_cmd node
   node_bin=$(command -v node)
+fi
+
+if ! is_windows; then
+  need_cmd curl
 fi
 
 if [ ! -f "$entry" ]; then
@@ -56,8 +75,126 @@ cleanup() {
 }
 trap cleanup EXIT
 
-export DSH_HOME="$dsh_home"
+if is_windows; then
+  export DSH_HOME
+  DSH_HOME=$(win_path "$dsh_home")
+  export USERPROFILE
+  USERPROFILE=$(win_path "$dsh_home/home")
+  mkdir -p "$dsh_home/home"
+else
+  export DSH_HOME="$dsh_home"
+fi
 export DSH_TELEMETRY_DISABLED=1
+
+# Official node.exe cannot consume an MSYS FIFO. Drive stdin from Node.
+if is_windows; then
+  helper_node=$(command -v node || true)
+  if [ -z "$helper_node" ]; then
+    helper_node=$node_bin
+  fi
+  echo "smoke-sidecar: windows quit-pipe via node helper port=$port entry=$entry"
+  SMOKE_NODE=$(win_path "$node_bin")
+  SMOKE_ENTRY=$(win_path "$entry")
+  export SMOKE_NODE SMOKE_ENTRY SMOKE_PORT="$port"
+  export SMOKE_READY_TIMEOUT="$ready_timeout" SMOKE_QUIT_TIMEOUT="$quit_timeout"
+  "$helper_node" --input-type=module - "$workdir" <<'JS'
+import { spawn } from 'node:child_process'
+import { request } from 'node:http'
+import { writeFileSync } from 'node:fs'
+
+const workdir = process.argv[2]
+const nodeBin = process.env.SMOKE_NODE
+const entry = process.env.SMOKE_ENTRY
+const port = process.env.SMOKE_PORT
+const readyMs = Number(process.env.SMOKE_READY_TIMEOUT || 180) * 1000
+const quitMs = Number(process.env.SMOKE_QUIT_TIMEOUT || 10) * 1000
+
+const child = spawn(nodeBin, [entry, 'web', '--host', '127.0.0.1', '--port', port], {
+  stdio: ['pipe', 'pipe', 'pipe'],
+  windowsHide: true,
+  env: process.env,
+})
+
+let out = ''
+let err = ''
+child.stdout.on('data', (chunk) => {
+  out += chunk.toString('utf8')
+})
+child.stderr.on('data', (chunk) => {
+  err += chunk.toString('utf8')
+})
+
+const dump = () => {
+  writeFileSync(`${workdir}/out`, out)
+  writeFileSync(`${workdir}/err`, err)
+}
+
+const url = await new Promise((resolve, reject) => {
+  const timer = setTimeout(() => {
+    dump()
+    child.kill()
+    reject(new Error(`sidecar ready timeout after ${readyMs / 1000}s`))
+  }, readyMs)
+  child.once('error', (e) => {
+    clearTimeout(timer)
+    dump()
+    reject(e)
+  })
+  child.once('exit', (code, signal) => {
+    clearTimeout(timer)
+    dump()
+    reject(new Error(`sidecar exited before ready (code ${code}, signal ${signal})`))
+  })
+  const onChunk = () => {
+    const match = out.match(/http:\/\/127\.0\.0\.1:\d+/)
+    if (!match) return
+    clearTimeout(timer)
+    child.removeAllListeners('exit')
+    child.removeAllListeners('error')
+    resolve(match[0])
+  }
+  child.stdout.on('data', onChunk)
+  onChunk()
+})
+
+console.log(`smoke-sidecar: ready ${url}`)
+
+const code = await new Promise((resolve, reject) => {
+  const req = request(url, { method: 'GET', timeout: 10_000 }, (res) => {
+    res.resume()
+    resolve(res.statusCode ?? 0)
+  })
+  req.on('error', reject)
+  req.end()
+})
+if (code !== 200) {
+  dump()
+  child.kill()
+  throw new Error(`expected HTTP 200 from ${url}, got ${code}`)
+}
+
+child.stdin.write('quit\n')
+child.stdin.end()
+
+const status = await new Promise((resolve, reject) => {
+  const timer = setTimeout(() => {
+    dump()
+    child.kill()
+    reject(new Error(`sidecar did not exit within ${quitMs / 1000}s after quit`))
+  }, quitMs)
+  child.once('exit', (code) => {
+    clearTimeout(timer)
+    resolve(code ?? 1)
+  })
+})
+dump()
+if (status !== 0) {
+  throw new Error(`sidecar exit ${status}, expected 0`)
+}
+console.log('smoke-sidecar: quit ok')
+JS
+  exit $?
+fi
 
 mkfifo "$workdir/in"
 # Reader (sidecar stdin) is opened by the child; open the writer after spawn.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Package the Electron shell + staged harness (Linux x64 or macOS arm64).
+# Package the Electron shell + staged harness (Linux x64, macOS arm64, or Windows x64).
 set -euo pipefail
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -55,8 +55,22 @@ case "$(uname -s)" in
         ;;
     esac
     ;;
+  MINGW*|MSYS*|CYGWIN*|Windows_NT)
+    case "$(uname -m)" in
+      x86_64|amd64)
+        pack_os=win
+        pack_arch=x64
+        builder_args=(--win nsis zip --x64)
+        artifact_glob='DeepSeek-Harness-*-win-x64.*'
+        ;;
+      *)
+        echo "error: Windows packaging only supports x64 in this PR (got $(uname -m))" >&2
+        exit 1
+        ;;
+    esac
+    ;;
   *)
-    echo "error: scripts/package.sh supports Linux x64 and macOS arm64 only (got $(uname -s))" >&2
+    echo "error: scripts/package.sh supports Linux x64, macOS arm64, and Windows x64 only (got $(uname -s))" >&2
     exit 1
     ;;
 esac
@@ -88,8 +102,16 @@ if [ "$pack_os" = mac ]; then
   need_helper=1
 fi
 
+runtime_node_ok() {
+  if [ "$pack_os" = win ]; then
+    [ -f "$stage/node/node.exe" ]
+  else
+    [ -x "$posix_node" ]
+  fi
+}
+
 staged_ok=1
-if [ ! -f "$stage/sidecar-entry.mjs" ] || [ ! -f "$stage/lib/bin.js" ] || [ ! -x "$posix_node" ]; then
+if [ ! -f "$stage/sidecar-entry.mjs" ] || [ ! -f "$stage/lib/bin.js" ] || ! runtime_node_ok; then
   staged_ok=0
 fi
 if [ "$need_helper" -eq 1 ] && [ ! -x "$spawn_helper" ]; then
@@ -101,7 +123,7 @@ if [ "$staged_ok" -eq 0 ]; then
   STAGE="$stage" "$script_dir/stage-runtime.sh"
 fi
 
-if [ ! -f "$stage/sidecar-entry.mjs" ] || [ ! -f "$stage/lib/bin.js" ] || [ ! -x "$posix_node" ]; then
+if [ ! -f "$stage/sidecar-entry.mjs" ] || [ ! -f "$stage/lib/bin.js" ] || ! runtime_node_ok; then
   echo "error: staged runtime incomplete at $stage; run scripts/stage-runtime.sh" >&2
   exit 1
 fi
@@ -110,7 +132,7 @@ if [ "$need_helper" -eq 1 ] && [ ! -x "$spawn_helper" ]; then
   exit 1
 fi
 
-if [ ! -x node_modules/.bin/electron-builder ]; then
+if [ ! -e node_modules/.bin/electron-builder ] && [ ! -e node_modules/.bin/electron-builder.cmd ]; then
   echo "error: electron-builder not installed; run pnpm install" >&2
   exit 1
 fi

@@ -82,3 +82,23 @@ mac:
     - target: zip
       arch:
         - arm64
+
+# x64 only until remaining-arch PR. Unsigned (CSC off in package.sh).
+win:
+  icon: resources/icons/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
+
+# Assisted installer so the PATH checkbox and directory page exist.
+# perMachine: false + selectPerMachineByDefault: false → per-user default.
+nsis:
+  oneClick: false
+  perMachine: false
+  selectPerMachineByDefault: false
+  allowToChangeInstallationDirectory: true
+  include: resources/installer.nsh
