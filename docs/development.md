@@ -47,6 +47,17 @@ HARNESS_CLONE_SSH=1 ./scripts/fetch-harness.sh
 
 `STAGE` defaults to `dist/runtime`. The script deploys the existing `@deepseek-ai/dsh` package (no injected workspace member), materializes links, restores missing direct deps, downloads official Node, and copies `electron/sidecar-entry.mjs`.
 
+## Package (Linux x64)
+
+Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` when it is missing), plus `pnpm install` in this repo.
+
+```sh
+./scripts/package.sh
+# artifacts: dist/installers/DeepSeek-Harness-<desktop.version>-linux-x64.{deb,AppImage}
+```
+
+electron-builder always runs with `--publish never`. `.deb` is the primary installer (SUID `chrome-sandbox`, no `--no-sandbox`). AppImage is a portable extra and is launched with `--no-sandbox`. Host smoke of the staged sidecar: `./scripts/smoke-sidecar.sh`. After packaging, `./scripts/smoke-packaged.sh` extract-and-runs the AppImage (no `libfuse2`) and unpacks the `.deb`.
+
 ## Rules
 
 - Never commit `.cache/`, `dist/`, `out/`, or `node_modules/`.

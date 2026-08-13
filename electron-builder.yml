@@ -1,0 +1,68 @@
+appId: ai.deepseek.harness.desktop
+productName: DeepSeek Harness
+asar: true
+npmRebuild: false
+nodeGypRebuild: false
+electronVersion: 37.2.6
+# Always pass --publish never from package.sh; no publisher in v1.
+publish: null
+
+directories:
+  output: dist/installers
+  buildResources: resources
+
+# Artifact names match the CI upload contract.
+artifactName: DeepSeek-Harness-${version}-${os}-${arch}.${ext}
+
+# Compiled shell only. Default **/* is not merged when a non-ignore
+# pattern is present; still deny .cache so a future files tweak cannot
+# asar-pack the harness clone.
+files:
+  - package.json
+  - LICENSE
+  - out/**/*
+  - "!out/**/*.test.js"
+  - "!out/**/*.test.js.map"
+  - "!**/.cache/**"
+  - "!**/.omx/**"
+
+# Staged official Node + @deepseek-ai/dsh tree. Never inside app.asar.
+extraResources:
+  - from: dist/runtime
+    to: harness
+    filter:
+      - "**/*"
+
+linux:
+  category: Development
+  icon: resources/icons
+  executableName: deepseek-harness
+  # Match package.json desktopName / StartupWMClass / binary.
+  syncDesktopName: true
+  synopsis: DeepSeek Harness desktop
+  # deb first (primary, SUID chrome-sandbox); AppImage is portable extra.
+  target:
+    - target: deb
+      arch:
+        - x64
+    - target: AppImage
+      arch:
+        - x64
+  desktop:
+    entry:
+      Name: DeepSeek Harness
+      Comment: DeepSeek Harness desktop
+      Terminal: "false"
+      Type: Application
+      Categories: Development;
+      StartupWMClass: deepseek-harness
+
+# AppImage cannot ship a working SUID chrome-sandbox helper.
+appImage:
+  executableArgs:
+    - --no-sandbox
+
+# .deb does not pass --no-sandbox; electron-builder installs chrome-sandbox setuid.
+deb:
+  packageName: deepseek-harness
+  priority: optional

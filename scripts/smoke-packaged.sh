@@ -1,0 +1,259 @@
+#!/usr/bin/env bash
+# Packaged smoke: extract-and-run AppImage (no libfuse2) and unpack .deb.
+# Orphan: kill Electron after ready; sidecar must die within 2s.
+set -euo pipefail
+
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+repo_root=$(cd "$script_dir/.." && pwd)
+cd "$repo_root"
+
+need_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "error: $1 is required but not found on PATH${2:+ ($2)}" >&2
+    exit 1
+  fi
+}
+
+need_cmd curl
+need_cmd dpkg-deb
+# Never apt-get install libfuse2. AppImage smoke uses extract-and-run.
+
+out_dir=${1:-${PACKAGE_OUT:-$repo_root/dist/installers}}
+case "$out_dir" in
+  /*) ;;
+  *) out_dir="$repo_root/$out_dir" ;;
+esac
+
+appimage=$(find "$out_dir" -maxdepth 1 -type f -name '*.AppImage' -print -quit || true)
+deb=$(find "$out_dir" -maxdepth 1 -type f -name '*.deb' -print -quit || true)
+
+if [ -z "$appimage" ] || [ -z "$deb" ]; then
+  echo "error: expected .deb and .AppImage in $out_dir" >&2
+  ls -la "$out_dir" >&2 || true
+  exit 1
+fi
+
+chmod +x "$appimage"
+
+workdir=$(mktemp -d)
+wrapper_pid=
+
+cleanup() {
+  if [ -n "${wrapper_pid:-}" ] && kill -0 "$wrapper_pid" 2>/dev/null; then
+    kill -9 "$wrapper_pid" 2>/dev/null || true
+    wait "$wrapper_pid" 2>/dev/null || true
+  fi
+  pkill -9 -f "$workdir" 2>/dev/null || true
+  rm -rf "$workdir"
+}
+trap cleanup EXIT
+
+echo "smoke-packaged: appimage=$appimage"
+echo "smoke-packaged: deb=$deb"
+
+# --- static: AppImage Exec includes --no-sandbox (no FUSE) ---
+mkdir -p "$workdir/appimage"
+(
+  cd "$workdir/appimage"
+  "$appimage" --appimage-extract >/dev/null
+)
+ai_desktop=$(find "$workdir/appimage/squashfs-root" -maxdepth 2 -name '*.desktop' -print -quit || true)
+if [ -z "$ai_desktop" ]; then
+  echo "error: AppImage extract produced no .desktop file" >&2
+  exit 1
+fi
+if ! grep -E '^Exec=' "$ai_desktop" | grep -q -- '--no-sandbox'; then
+  echo "error: AppImage desktop Exec must include --no-sandbox" >&2
+  cat "$ai_desktop" >&2
+  exit 1
+fi
+if ! find "$workdir/appimage/squashfs-root" -path '*/resources/harness/sidecar-entry.mjs' | grep -q .; then
+  echo "error: AppImage missing extraResources harness/sidecar-entry.mjs" >&2
+  exit 1
+fi
+echo "smoke-packaged: AppImage desktop has --no-sandbox and staged harness"
+
+# --- static: .deb Exec does NOT include --no-sandbox ---
+mkdir -p "$workdir/deb"
+dpkg-deb -x "$deb" "$workdir/deb"
+deb_desktop=$(find "$workdir/deb" -name '*.desktop' -print -quit || true)
+if [ -z "$deb_desktop" ]; then
+  echo "error: .deb unpack produced no .desktop file" >&2
+  exit 1
+fi
+if grep -E '^Exec=' "$deb_desktop" | grep -q -- '--no-sandbox'; then
+  echo "error: .deb desktop Exec must not include --no-sandbox" >&2
+  cat "$deb_desktop" >&2
+  exit 1
+fi
+if ! find "$workdir/deb" -path '*/resources/harness/sidecar-entry.mjs' | grep -q .; then
+  echo "error: .deb missing extraResources harness/sidecar-entry.mjs" >&2
+  exit 1
+fi
+sandbox=$(find "$workdir/deb" -name chrome-sandbox -print -quit || true)
+if [ -z "$sandbox" ]; then
+  echo "error: .deb missing chrome-sandbox helper" >&2
+  exit 1
+fi
+echo "smoke-packaged: .deb desktop has no --no-sandbox; chrome-sandbox present"
+
+# --- launch AppImage without FUSE; orphan after ready ---
+need_cmd xvfb-run
+
+export HOME="$workdir/home"
+export DSH_HOME="$workdir/dsh"
+export DSH_TELEMETRY_DISABLED=1
+mkdir -p "$HOME" "$DSH_HOME"
+
+# First heal can exceed 60s.
+ready_timeout=${SMOKE_READY_TIMEOUT:-180}
+
+xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24' \
+  "$appimage" --appimage-extract-and-run \
+  >"$workdir/app.out" 2>"$workdir/app.err" &
+wrapper_pid=$!
+
+echo "smoke-packaged: launched AppImage extract-and-run pid=$wrapper_pid"
+
+url=
+deadline=$((SECONDS + ready_timeout))
+while [ "$SECONDS" -lt "$deadline" ]; do
+  if ! kill -0 "$wrapper_pid" 2>/dev/null; then
+    wait "$wrapper_pid" || true
+    wrapper_pid=
+    echo "error: packaged app exited before ready" >&2
+    echo "----- stdout -----" >&2
+    cat "$workdir/app.out" >&2 || true
+    echo "----- stderr -----" >&2
+    cat "$workdir/app.err" >&2 || true
+    exit 1
+  fi
+  if [ -f "$DSH_HOME/desktop/listen-port" ]; then
+    port=$(tr -d '[:space:]' <"$DSH_HOME/desktop/listen-port")
+    if [ -n "$port" ] && curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:$port/"; then
+      url="http://127.0.0.1:$port"
+      break
+    fi
+  fi
+  sleep 1
+done
+
+if [ -z "$url" ]; then
+  echo "error: packaged app ready timeout after ${ready_timeout}s" >&2
+  echo "----- stdout -----" >&2
+  cat "$workdir/app.out" >&2 || true
+  echo "----- stderr -----" >&2
+  cat "$workdir/app.err" >&2 || true
+  echo "----- sidecar.log -----" >&2
+  cat "$DSH_HOME/desktop/sidecar.log" >&2 || true
+  echo "----- main.log -----" >&2
+  cat "$DSH_HOME/desktop/main.log" >&2 || true
+  exit 1
+fi
+
+echo "smoke-packaged: ready $url"
+
+sidecar_pid=$(pgrep -n -f 'sidecar-entry\.mjs' || true)
+if [ -z "$sidecar_pid" ]; then
+  echo "error: sidecar-entry.mjs not running after ready" >&2
+  exit 1
+fi
+
+electron_pid=$(ps -o ppid= -p "$sidecar_pid" | tr -d ' ')
+if [ -z "$electron_pid" ] || [ "$electron_pid" = "1" ]; then
+  echo "error: could not resolve Electron parent of sidecar pid $sidecar_pid" >&2
+  exit 1
+fi
+
+echo "smoke-packaged: orphan kill -9 electron=$electron_pid sidecar=$sidecar_pid"
+kill -9 "$electron_pid"
+
+gone=0
+orphan_deadline=$((SECONDS + 2))
+while [ "$SECONDS" -lt "$orphan_deadline" ]; do
+  if ! kill -0 "$sidecar_pid" 2>/dev/null; then
+    gone=1
+    break
+  fi
+  sleep 0.1
+done
+
+if [ "$gone" -ne 1 ]; then
+  echo "error: sidecar $sidecar_pid still alive 2s after Electron $electron_pid was killed" >&2
+  exit 1
+fi
+
+echo "smoke-packaged: sidecar exited after Electron death"
+
+if [ -n "${wrapper_pid:-}" ] && kill -0 "$wrapper_pid" 2>/dev/null; then
+  kill -9 "$wrapper_pid" 2>/dev/null || true
+  wait "$wrapper_pid" 2>/dev/null || true
+fi
+wrapper_pid=
+
+# --- unpacked .deb starts (chrome-sandbox setuid as postinst would) ---
+bin=$(find "$workdir/deb" -type f -name deepseek-harness -print -quit || true)
+if [ -z "$bin" ]; then
+  echo "error: unpacked .deb has no deepseek-harness binary" >&2
+  exit 1
+fi
+
+if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+  sudo chown root:root "$sandbox"
+  sudo chmod 4755 "$sandbox"
+else
+  echo "smoke-packaged: no passwordless sudo; .deb launch uses --disable-setuid-sandbox (CI unpack only)"
+fi
+
+# Fresh Chromium profile dir. Reuse DSH_HOME so heal does not run twice.
+export HOME="$workdir/home-deb"
+mkdir -p "$HOME"
+
+deb_extra=()
+if [ ! -u "$sandbox" ]; then
+  deb_extra+=(--disable-setuid-sandbox)
+fi
+
+xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24' \
+  "$bin" "${deb_extra[@]}" \
+  >"$workdir/deb.out" 2>"$workdir/deb.err" &
+wrapper_pid=$!
+
+deb_url=
+deadline=$((SECONDS + ready_timeout))
+while [ "$SECONDS" -lt "$deadline" ]; do
+  if ! kill -0 "$wrapper_pid" 2>/dev/null; then
+    wait "$wrapper_pid" || true
+    wrapper_pid=
+    echo "error: unpacked .deb app exited before ready" >&2
+    echo "----- stdout -----" >&2
+    cat "$workdir/deb.out" >&2 || true
+    echo "----- stderr -----" >&2
+    cat "$workdir/deb.err" >&2 || true
+    exit 1
+  fi
+  if [ -f "$DSH_HOME/desktop/listen-port" ]; then
+    port=$(tr -d '[:space:]' <"$DSH_HOME/desktop/listen-port")
+    if [ -n "$port" ] && curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:$port/"; then
+      deb_url="http://127.0.0.1:$port"
+      break
+    fi
+  fi
+  sleep 1
+done
+
+if [ -z "$deb_url" ]; then
+  echo "error: unpacked .deb ready timeout after ${ready_timeout}s" >&2
+  echo "----- stdout -----" >&2
+  cat "$workdir/deb.out" >&2 || true
+  echo "----- stderr -----" >&2
+  cat "$workdir/deb.err" >&2 || true
+  exit 1
+fi
+
+echo "smoke-packaged: unpacked .deb ready $deb_url"
+kill -9 "$wrapper_pid" 2>/dev/null || true
+wait "$wrapper_pid" 2>/dev/null || true
+wrapper_pid=
+
+echo "smoke-packaged: ok"

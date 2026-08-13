@@ -5,17 +5,21 @@
   "private": true,
   "type": "module",
   "description": "Thin Electron window that supervises dsh web",
+  "author": "DeepSeek",
   "main": "out/main.js",
+  "desktopName": "deepseek-harness",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "tsc && electron .",
-    "test": "tsc && node --test out/env.test.js"
+    "test": "tsc && node --test out/env.test.js",
+    "package": "./scripts/package.sh"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
     "electron": "37.2.6",
+    "electron-builder": "26.15.3",
     "typescript": "^5.9.2"
   }
 }

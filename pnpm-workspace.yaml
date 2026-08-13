@@ -1,3 +1,5 @@
 # Electron's postinstall downloads the platform binary.
+# electron-winstaller is pulled by electron-builder (unused on Linux).
 allowBuilds:
   electron: true
+  electron-winstaller: true
