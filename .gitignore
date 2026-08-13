@@ -1,0 +1,37 @@
+# Never commit a harness clone or packaging output
+.cache/
+dist/
+out/
+node_modules/
+
+# Electron / electron-builder
+release/
+*.asar
+
+# OS junk
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*~
+
+# Editor swap
+*.swp
+*.swo
+*.swn
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local env
+.env
+.env.*
+
+# Session / agent workspace (not part of the packaging repo)
+.omx/

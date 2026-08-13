@@ -1,0 +1,19 @@
+{
+  "desktop": {
+    "version": "0.1.0-beta.1",
+    "productName": "DeepSeek Harness",
+    "appId": "ai.deepseek.harness.desktop"
+  },
+  "harness": {
+    "repository": "https://github.com/deepseek-ai/deepseek-harness.git",
+    "sshRepository": "git@github.com:deepseek-ai/deepseek-harness.git",
+    "sha": "47f943859bef60e4160492346772ded9b24f765a",
+    "version": "0.1.0-rc.5",
+    "tag": null
+  },
+  "runtimes": {
+    "node": "24.5.0",
+    "pnpm": "11.7.0",
+    "electron": "37.2.6"
+  }
+}
