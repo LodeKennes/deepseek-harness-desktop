@@ -52,6 +52,8 @@ smoke_packaged_mac() {
 
   workdir=$(mktemp -d)
   wrapper_pid=
+  # Invoked via trap EXIT; shellcheck cannot see that (SC2317/SC2329).
+  # shellcheck disable=SC2317,SC2329
   cleanup_mac() {
     if [ -n "${wrapper_pid:-}" ] && kill -0 "$wrapper_pid" 2>/dev/null; then
       kill -9 "$wrapper_pid" 2>/dev/null || true
