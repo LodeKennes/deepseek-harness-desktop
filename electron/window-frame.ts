@@ -72,10 +72,10 @@ export function windowChromePageCss(platform = process.platform): string {
     ? '.inkline-win-btns { display: flex; }'
     : '.inkline-win-btns { display: none; }'
   const macPad = platform === 'darwin'
-    ? '.topbar { padding-left: 76px; }'
+    ? 'main { padding-left: 56px; }'
     : ''
   const captionPad = platform === 'win32' || platform === 'linux'
-    ? `.topbar { padding-right: ${OVERLAY_BUTTONS_WIDTH}px; }`
+    ? `main { padding-right: ${OVERLAY_BUTTONS_WIDTH}px; }`
     : ''
   const dragRight = platform === 'win32' || platform === 'linux'
     ? `${OVERLAY_BUTTONS_WIDTH}px`

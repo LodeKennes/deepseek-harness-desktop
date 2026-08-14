@@ -6,7 +6,6 @@ import {
   type SubscriptionDemoAction,
   type SubscriptionDemoState,
 } from './subscription-demo.js'
-import { UI_FONT_FAMILY, uiFontFace } from './ui-font.js'
 import {
   windowChromePageCss,
   windowControlButtonsHtml,
@@ -182,21 +181,14 @@ function renderShellHtml(opts: ErrorPageOptions & { restart: boolean }): string 
   <meta charset="utf-8">
   <title>${escapeHtml(opts.title)}</title>
   <style>
-    :root { color-scheme: light dark; --ink: #0f1115; --paper: #f9fafb; --pen: #2563eb; }
-    @media (prefers-color-scheme: dark) {
-      :root { --ink: #f1f5f9; --paper: #10141d; --pen: #60a5fa; }
-    }
-    ${uiFontFace()}
+    :root { color-scheme: light dark; }
     ${windowChromePageCss()}
-    body { font-family: ${UI_FONT_FAMILY}; margin: 0; padding: 48px 32px; line-height: 1.45;
-           color: var(--ink); background: var(--paper); }
-    main { max-width: 720px; margin: 0 auto; }
-    h1 { font-size: 1.4rem; margin: 0 0 12px; }
+    body { font: 15px/1.45 system-ui, sans-serif; margin: 0; padding: 48px 24px; color: CanvasText; background: Canvas; }
+    main { max-width: 40rem; margin: 0 auto; }
+    h1 { font-size: 1.15rem; margin: 0 0 12px; }
     p { margin: 0 0 16px; }
-    pre { white-space: pre-wrap; word-break: break-word; padding: 12px; border-radius: 2px;
-          background: color-mix(in srgb, currentColor 8%, transparent); font-size: 12px; }
-    a.restart { display: inline-block; padding: 8px 16px; border-radius: 2px; text-decoration: none;
-                background: var(--ink); color: var(--paper); }
+    pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+    a.restart { color: LinkText; }
   </style>
 </head>
 <body>

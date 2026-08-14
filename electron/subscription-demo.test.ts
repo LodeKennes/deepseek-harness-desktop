@@ -44,7 +44,7 @@ test('updates one provider without mutating the previous state', () => {
   assert.equal(connected.statuses.codex, 'disconnected')
 })
 
-test('renders connector, security, keyboard, and connected-state cues', () => {
+test('renders only connect actions, status, and continue', () => {
   const connected = setSubscriptionProviderState(createSubscriptionDemoState(), 'codex', {
     status: 'connected',
     account: 'user@example.com',
@@ -52,25 +52,34 @@ test('renders connector, security, keyboard, and connected-state cues', () => {
   })
   const html = renderSubscriptionDemo(connected)
 
-  assert.match(html, /Local connector/)
-  assert.match(html, /system browser handles provider sign-in/)
+  assert.match(html, /Connect a subscription/)
   assert.match(html, /Content-Security-Policy/)
-  assert.match(html, /Credentials stay on this device/)
-  assert.match(html, /Continue to Harness/)
-  assert.match(html, /DeepSeek Harness/)
-  assert.match(html, /Disconnect ChatGPT \/ Codex/)
+  assert.match(html, />Continue</)
+  assert.match(html, /Disconnect/)
   assert.match(html, /user@example\.com/)
-  assert.match(html, /gpt-example-one/)
+  assert.match(html, /ChatGPT \/ Codex/)
+  assert.match(html, /Claude/)
+  assert.match(html, /Google Antigravity/)
   assert.match(html, /:focus-visible/)
-  assert.match(html, /#2563eb/)
-  assert.doesNotMatch(html, /#E8EDE6/)
-  assert.doesNotMatch(html, /#BF352E/)
-  assert.doesNotMatch(html, /Archivo/)
+  assert.doesNotMatch(html, /Local connector/)
+  assert.doesNotMatch(html, /Bring your own subscription/)
+  assert.doesNotMatch(html, /Credentials stay on this device/)
+  assert.doesNotMatch(html, /CLIProxyAPI/)
+  assert.doesNotMatch(html, /gpt-example-one/)
+  assert.doesNotMatch(html, /brand-mark/)
+  assert.doesNotMatch(html, /linear-gradient/)
+  assert.doesNotMatch(html, /Skip for now/)
+})
+
+test('skip is the only continue action when nothing is connected', () => {
+  const html = renderSubscriptionDemo(createSubscriptionDemoState())
+  assert.match(html, />Skip</)
+  assert.doesNotMatch(html, />Continue</)
 })
 
 test('subscription screen reserves space for integrated window controls', () => {
   const mac = renderSubscriptionDemo(createSubscriptionDemoState(), 'DeepSeek Harness', 'darwin')
-  assert.match(mac, /padding-left: 76px/)
+  assert.match(mac, /padding-left: 56px/)
   assert.match(mac, /inkline-drag/)
   assert.doesNotMatch(mac, /aria-label="Window"/)
 

@@ -41,7 +41,7 @@
 
 ## Components
 - Existing components to reuse: the secured `BrowserWindow`, data-URL shell rendering, reserved `.invalid` navigation actions, and the application menu.
-- New/changed components: onboarding hero, provider connection card, status badge, discovered-model summary, privacy note, and primary/secondary actions.
+- New/changed components: a short provider list with Connect/Disconnect and a single Continue/Skip action.
 - Variants and states: disconnected, connecting, connected, skipped/continue, and the existing Harness start error state.
 - Token/component ownership: subscription CSS variables and markup live in `electron/subscription-demo.ts`; no new design-system layer is introduced.
 

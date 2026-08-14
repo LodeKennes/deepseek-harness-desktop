@@ -40,7 +40,7 @@ test('Linux hides the server bar and ships custom caption buttons', () => {
   assert.match(windowControlButtonsHtml(), /<svg /)
   assert.match(windowChromePageCss('linux'), /inkline-win-btns \{ display: flex/)
   assert.match(windowChromePageCss('linux'), /padding-right: 140px/)
-  assert.match(windowChromePageCss('darwin'), /padding-left: 76px/)
+  assert.match(windowChromePageCss('darwin'), /padding-left: 56px/)
   assert.match(windowChromePageCss('win32'), /right: 140px/)
   assert.doesNotMatch(windowChromePageCss('linux'), /height: 38px; -webkit-app-region: drag/)
 })

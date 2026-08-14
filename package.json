@@ -18,7 +18,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "tsc && electron .",
-    "test": "tsc && node --test out/cliproxy.test.js out/env.test.js out/patches.test.js out/sidecar.test.js out/styling.test.js out/subscription-demo.test.js out/ui-font.test.js out/window-frame.test.js out/workspace.test.js scripts/styling.test.mjs scripts/brand-file.test.mjs scripts/assert-desktop-brand.test.mjs",
+    "test": "tsc && node --test out/cliproxy.test.js out/env.test.js out/patches.test.js out/sidecar.test.js out/styling.test.js out/subscription-demo.test.js out/window-frame.test.js out/workspace.test.js scripts/styling.test.mjs scripts/brand-file.test.mjs scripts/assert-desktop-brand.test.mjs",
     "package": "./scripts/package.sh"
   },
   "devDependencies": {
