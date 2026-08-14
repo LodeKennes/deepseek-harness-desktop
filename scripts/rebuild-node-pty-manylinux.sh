@@ -96,15 +96,11 @@ fi
 # compile inside manylinux so the .node stays GLIBC <= 2.28.
 echo "rebuild-node-pty-manylinux: regenerating node-gyp Makefile in $addon_dir"
 rm -rf "$addon_dir/build"
-if pnpm -C "$clone" exec node-gyp --version >/dev/null 2>&1; then
-  pnpm -C "$clone" exec node-gyp --directory "$addon_dir" configure
-else
-  need_cmd npx
-  (
-    cd "$addon_dir"
-    npx --yes node-gyp@12 configure
-  )
-fi
+need_cmd npx
+(
+  cd "$addon_dir"
+  npx --yes node-gyp@12 configure
+)
 
 if [ ! -f "$addon_dir/build/Makefile" ]; then
   echo "error: node-gyp configure did not write $addon_dir/build/Makefile" >&2
