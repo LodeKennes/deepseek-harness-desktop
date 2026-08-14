@@ -2,7 +2,7 @@
 
 **Unsigned developer-preview builds.** These artifacts are not code-signed or notarized. Windows SmartScreen and macOS Gatekeeper will warn; Linux packages have no signature. Treat the OS trust UI as correct. There is no auto-update.
 
-Download installers from the [latest GitHub Release](https://github.com/LodeKennes/deepseek-harness-desktop/releases/latest) (`desktop-v*` tags). End users do **not** need Node.js, pnpm, Python, or a C++ toolchain for the primary installers. Installed size is on the order of **0.5 GB** (compressed downloads ~180–260 MB).
+Download installers from the [latest GitHub Release](https://github.com/LodeKennes/deepseek-harness-desktop/releases/latest) (`desktop-v*` tags), or install through a package manager (below). End users do **not** need Node.js, pnpm, Python, or a C++ toolchain for the primary installers. Installed size is on the order of **0.5 GB** (compressed downloads ~180–260 MB). How each gallery is published: [packaging/README.md](../packaging/README.md).
 
 On first launch, connect an eligible ChatGPT/Codex, Claude, or Google
 Antigravity account in your system browser. The app discovers its models and
@@ -14,6 +14,30 @@ The bundled CLIProxyAPI listens on localhost only. Its account files live under
 `~/.dsh/desktop/cliproxyapi/auth` (or the equivalent `%USERPROFILE%\.dsh` path
 on Windows). Remove an account through **Subscriptions → Manage
 subscriptions…** in the desktop menu.
+
+## Package managers
+
+These indexes point at the same GitHub Release assets. First-time WinGet, Chocolatey, and AUR listings need a one-time gallery submission; Homebrew and Scoop work as soon as `master` has `Casks/` and `bucket/`.
+
+```sh
+# macOS (Homebrew)
+brew tap LodeKennes/deepseek-harness-desktop https://github.com/LodeKennes/deepseek-harness-desktop
+brew install --cask deepseek-harness
+xattr -dr com.apple.quarantine "/Applications/DeepSeek Harness.app"
+
+# Windows (Scoop is available immediately)
+scoop bucket add deepseek-harness https://github.com/LodeKennes/deepseek-harness-desktop
+scoop install deepseek-harness
+
+# Windows (after the community packages exist)
+winget install LodeKennes.DeepSeekHarness
+choco install deepseek-harness
+
+# Arch (after the AUR package is pushed)
+yay -S deepseek-harness-desktop-bin
+```
+
+Debian/Ubuntu and Fedora still install the Release `.deb` / `.rpm` directly. There is no Launchpad PPA or Fedora COPR yet.
 
 ## Windows
 

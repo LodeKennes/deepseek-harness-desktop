@@ -36,7 +36,22 @@ These desktop builds are **unsigned**. Windows SmartScreen and macOS Gatekeeper 
 
 ## Install
 
-Pick the asset for your OS and CPU from the [latest GitHub Release](https://github.com/LodeKennes/deepseek-harness-desktop/releases/latest). Details: [docs/user-install.md](docs/user-install.md).
+Pick the asset for your OS and CPU from the [latest GitHub Release](https://github.com/LodeKennes/deepseek-harness-desktop/releases/latest), or use a package manager. Details: [docs/user-install.md](docs/user-install.md). Gallery status: [packaging/README.md](packaging/README.md).
+
+```sh
+# macOS
+brew tap LodeKennes/deepseek-harness-desktop https://github.com/LodeKennes/deepseek-harness-desktop
+brew install --cask deepseek-harness
+
+# Windows
+winget install LodeKennes.DeepSeekHarness   # after the first community PR lands
+scoop bucket add deepseek-harness https://github.com/LodeKennes/deepseek-harness-desktop
+scoop install deepseek-harness
+choco install deepseek-harness              # after the community package is approved
+
+# Arch
+yay -S deepseek-harness-desktop-bin         # after the AUR repo is created
+```
 
 The official CLI path remains `npx @deepseek-ai/dsh web` — see the [upstream README](https://github.com/deepseek-ai/deepseek-harness#run).
 

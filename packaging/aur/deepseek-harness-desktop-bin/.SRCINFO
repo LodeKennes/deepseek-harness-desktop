@@ -1,0 +1,25 @@
+pkgbase = deepseek-harness-desktop-bin
+	pkgdesc = Desktop installers for DeepSeek Harness. Everything is a plugin.
+	pkgver = 0.1.0.6
+	pkgrel = 1
+	url = https://github.com/LodeKennes/deepseek-harness-desktop
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	depends = gtk3
+	depends = libnotify
+	depends = nss
+	depends = libxss
+	depends = libxtst
+	depends = xdg-utils
+	depends = at-spi2-core
+	depends = libsecret
+	provides = deepseek-harness-desktop
+	conflicts = deepseek-harness-desktop
+	options = !strip
+	source_x86_64 = DeepSeek-Harness-0.1.0-6-linux-x64.pkg.tar.zst::https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.0-6/DeepSeek-Harness-0.1.0-6-linux-x64.pkg.tar.zst
+	sha256sums_x86_64 = a9a394d737857af649a0662bbb1c19c8d0acd90b7624b0b35637ce21f4e0697a
+	source_aarch64 = DeepSeek-Harness-0.1.0-6-linux-aarch64.pkg.tar.zst::https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.0-6/DeepSeek-Harness-0.1.0-6-linux-aarch64.pkg.tar.zst
+	sha256sums_aarch64 = 8ecfbee71d6ca41e7d4f5608f8668374fd9be9a592fa9f1a5ebec22d2a1d0b38
+
+pkgname = deepseek-harness-desktop-bin

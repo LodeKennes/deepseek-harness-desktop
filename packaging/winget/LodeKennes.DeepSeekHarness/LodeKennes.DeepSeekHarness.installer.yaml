@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.9.0.schema.json
+PackageIdentifier: LodeKennes.DeepSeekHarness
+PackageVersion: 0.1.0-6
+InstallerLocale: en-US
+InstallerType: nullsoft
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+InstallerSwitches:
+  Silent: /S
+  SilentWithProgress: /S
+UpgradeBehavior: install
+ReleaseDate: 2026-08-14
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.0-6/DeepSeek-Harness-0.1.0-6-win-x64.exe
+    InstallerSha256: 50A9C6A9FF10064EBE82629D18E0CF818292BE6593F3A3A3ACEBFFFD6CE10EF9
+    AppsAndFeaturesEntries:
+      - DisplayName: DeepSeek Harness
+        Publisher: Lode Kennes
+  - Architecture: arm64
+    InstallerUrl: https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.0-6/DeepSeek-Harness-0.1.0-6-win-arm64.exe
+    InstallerSha256: EA9F592C5C2DD0CB952DCEBD330626766DFD187853E19DFD666A0D821968D209
+    AppsAndFeaturesEntries:
+      - DisplayName: DeepSeek Harness
+        Publisher: Lode Kennes
+ManifestType: installer
+ManifestVersion: 1.9.0

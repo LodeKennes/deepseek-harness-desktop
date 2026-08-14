@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>deepseek-harness</id>
+    <version>0.1.0.6</version>
+    <title>DeepSeek Harness</title>
+    <authors>Lode Kennes</authors>
+    <owners>Lode Kennes</owners>
+    <projectUrl>https://github.com/LodeKennes/deepseek-harness-desktop</projectUrl>
+    <projectSourceUrl>https://github.com/LodeKennes/deepseek-harness-desktop</projectSourceUrl>
+    <packageSourceUrl>https://github.com/LodeKennes/deepseek-harness-desktop/tree/master/packaging/chocolatey</packageSourceUrl>
+    <docsUrl>https://github.com/LodeKennes/deepseek-harness-desktop/blob/master/docs/user-install.md</docsUrl>
+    <bugTrackerUrl>https://github.com/LodeKennes/deepseek-harness-desktop/issues</bugTrackerUrl>
+    <licenseUrl>https://github.com/LodeKennes/deepseek-harness-desktop/blob/master/LICENSE</licenseUrl>
+    <iconUrl>https://raw.githubusercontent.com/LodeKennes/deepseek-harness-desktop/master/resources/icons/128x128.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <summary>Desktop installers for DeepSeek Harness. Everything is a plugin.</summary>
+    <description>Desktop installers for DeepSeek Harness. Everything is a plugin. Unsigned developer-preview NSIS installer from GitHub Releases. SmartScreen will warn. Do not add `dsh` to PATH if you already have the official CLI.</description>
+    <tags>deepseek harness dsh electron desktop agent preview</tags>
+    <releaseNotes>https://github.com/LodeKennes/deepseek-harness-desktop/releases/tag/desktop-v0.1.0-6</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

@@ -158,3 +158,76 @@ jobs:
               --generate-notes \
               --latest
           fi
+
+  indexes:
+    name: sync package indexes
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: master
+
+      - name: Rewrite Homebrew, Scoop, WinGet, Chocolatey, AUR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: ./scripts/sync-package-indexes.sh "${{ needs.version.outputs.tag }}"
+
+      - name: Commit indexes
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks bucket packaging
+          if git diff --cached --quiet; then
+            echo "indexes already current"
+            exit 0
+          fi
+          git commit -m "chore: sync package indexes for ${{ needs.version.outputs.version }}"
+          git push
+
+  winget:
+    name: submit WinGet
+    needs: [version, release]
+    if: ${{ secrets.WINGET_TOKEN != '' }}
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Submit LodeKennes.DeepSeekHarness
+        uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: LodeKennes.DeepSeekHarness
+          version: ${{ needs.version.outputs.version }}
+          release-tag: ${{ needs.version.outputs.tag }}
+          installers-regex: 'win-(x64|arm64)\.exe$'
+          token: ${{ secrets.WINGET_TOKEN }}
+
+  chocolatey:
+    name: push Chocolatey
+    needs: [version, indexes]
+    if: ${{ secrets.CHOCOLATEY_API_KEY != '' }}
+    continue-on-error: true
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: master
+
+      - name: Pack and push
+        shell: bash
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        run: |
+          set -euo pipefail
+          cd packaging/chocolatey
+          choco pack
+          nupkg=$(ls -1 deepseek-harness.*.nupkg | head -n 1)
+          choco push "$nupkg" --source https://push.chocolatey.org/ --api-key "$CHOCOLATEY_API_KEY"

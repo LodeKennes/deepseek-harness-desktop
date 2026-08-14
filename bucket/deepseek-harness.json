@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0-6",
+  "description": "Desktop installers for DeepSeek Harness. Everything is a plugin.",
+  "homepage": "https://github.com/LodeKennes/deepseek-harness-desktop",
+  "license": "MIT",
+  "notes": "Unsigned developer-preview build. SmartScreen will warn.",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.0-6/DeepSeek-Harness-0.1.0-6-win-x64.zip",
+      "hash": "035bc79f0c61d247f5dfad5bf25b3b01a006a7ff1713b9758832cc2d326ada81"
+    },
+    "arm64": {
+      "url": "https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.0-6/DeepSeek-Harness-0.1.0-6-win-arm64.zip",
+      "hash": "5c45afdb220c3841f2592c33a75a41025f9087221dd8a52f20dbeeb3d305b8d4"
+    }
+  },
+  "shortcuts": [
+    [
+      "DeepSeek Harness.exe",
+      "DeepSeek Harness"
+    ]
+  ],
+  "checkver": {
+    "url": "https://github.com/LodeKennes/deepseek-harness-desktop/releases/latest",
+    "regex": "desktop-v([\\d.]+-\\d+)"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v$version/DeepSeek-Harness-$version-win-x64.zip"
+      },
+      "arm64": {
+        "url": "https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v$version/DeepSeek-Harness-$version-win-arm64.zip"
+      }
+    },
+    "hash": {
+      "url": "$baseurl/SHA256SUMS"
+    }
+  }
+}

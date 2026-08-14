@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+PackageIdentifier: LodeKennes.DeepSeekHarness
+PackageVersion: 0.1.0-6
+PackageLocale: en-US
+Publisher: Lode Kennes
+PublisherUrl: https://github.com/LodeKennes
+PublisherSupportUrl: https://github.com/LodeKennes/deepseek-harness-desktop/issues
+Author: Lode Kennes
+PackageName: DeepSeek Harness
+PackageUrl: https://github.com/LodeKennes/deepseek-harness-desktop
+License: MIT
+LicenseUrl: https://github.com/LodeKennes/deepseek-harness-desktop/blob/master/LICENSE
+Copyright: Copyright (c) 2026 Lode Kennes
+ShortDescription: Desktop installers for DeepSeek Harness. Everything is a plugin.
+Description: Desktop installers for DeepSeek Harness (dsh), the open-source agent harness from DeepSeek AI. Everything is a plugin. This package is an unsigned developer-preview build. Windows SmartScreen will warn.
+Moniker: deepseek-harness
+Tags:
+  - deepseek
+  - dsh
+  - electron
+  - agent
+  - desktop
+ReleaseNotesUrl: https://github.com/LodeKennes/deepseek-harness-desktop/releases/tag/desktop-v0.1.0-6
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0
