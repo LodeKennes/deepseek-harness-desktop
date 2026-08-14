@@ -111,12 +111,14 @@ stage_landlock_launcher() {
   fi
 
   local built="$clone/native/landlock-run/packages/linux-${arch}/bin/landlock-run"
+  local src="$clone/native/landlock-run/packages/entry/src/main.c"
   if [ ! -f "$built" ] && command -v musl-gcc >/dev/null 2>&1; then
     echo "stage-runtime: building landlock-run with musl-gcc"
-    (
-      cd "$clone"
-      pnpm --filter @deepseek-ai/node-addon-landlock-run-workspace build:native
-    )
+    mkdir -p "$(dirname "$built")"
+    # Direct musl-gcc: `pnpm --filter … build:native` re-enters the harness
+    # root and runs postinstall (lefthook), which is not in this deploy.
+    musl-gcc -std=c11 -Os -Wall -Wextra -Werror -static -s -o "$built" "$src"
+    chmod 755 "$built"
   fi
 
   if [ -f "$built" ]; then
