@@ -56,6 +56,7 @@ test('repo styling.json is a non-DeepSeek brand loaded through the shipped parse
   assert.match(chrome, /inter-latin-italic-variable/)
   assert.match(chrome, /repeating-linear-gradient/)
   assert.match(chrome, /--dsw-shadow-lv2: none/)
+  assert.match(chrome, /font-synthesis: none/)
   assert.doesNotMatch(chrome, /Archivo/)
 })
 

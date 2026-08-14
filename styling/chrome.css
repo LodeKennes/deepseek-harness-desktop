@@ -19,6 +19,7 @@ body {
   font-weight: 400;
   letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
+  font-synthesis: none;
   /* Chart-paper weave: the same 48px vertical rules as the Recorder site. */
   background-image: repeating-linear-gradient(
     90deg,
