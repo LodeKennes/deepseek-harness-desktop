@@ -19,6 +19,7 @@ import {
   hashStylingInputs,
   parseStyling,
   parseSvgMeta,
+  loadStyling,
   planFontOverlays,
   planOverlay,
   svgInnerToJsx,
@@ -120,6 +121,17 @@ test('host plugin fails loud on the title needle and styles body not html', () =
   assert.match(host, /body\[data-ds-dark-theme\]/)
   assert.match(host, /Inter/)
   assert.doesNotMatch(host, /html \{/)
+})
+
+test('generated host plugin carries the shipped Inter chrome, not Archivo', () => {
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
+  const extra = readFileSync(join(repoRoot, 'styling', 'chrome.css'), 'utf8')
+  const host = generateHostPlugin(loadStyling(repoRoot), extra)
+  assert.match(host, /Inter/)
+  assert.match(host, /inter-latin-variable\.woff2/)
+  assert.match(host, /--dsw-font-family/)
+  assert.doesNotMatch(host, /Archivo/)
+  assert.doesNotMatch(host, /archivo-latin-static/)
 })
 
 test('host plugin integrates window chrome into existing sidebar and header', () => {
