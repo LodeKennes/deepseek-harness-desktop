@@ -396,11 +396,16 @@ if [ ! -f "$manifest" ]; then
   exit 1
 fi
 
-# Workspace package roots (no node_modules cycles). Built once with Node:
+# Workspace package roots (no node_modules cycles). Built once with Node.
+# Keep the dependency walks on named temp files: Windows ARM64 Git Bash can
+# stop after a process-substitution loop while still reporting status 0.
 # Windows jq.exe + MSYS path conversion writes D:\... into the map, and
 # Git Bash [ -e ] treats backslashes as escapes, so vendor/cordis vanished.
 workspace_map=$(mktemp)
-trap 'rm -f "$workspace_map"' EXIT
+direct_deps=$(mktemp)
+manifest_list=$(mktemp)
+dep_names=$(mktemp)
+trap 'rm -f "$workspace_map" "$direct_deps" "$manifest_list" "$dep_names"' EXIT
 clone_for_node=$clone
 map_for_node=$workspace_map
 if command -v cygpath >/dev/null 2>&1; then
@@ -508,6 +513,7 @@ find_dep_source() {
 
 restored=
 missing=
+jq -r '.dependencies // {} | keys[]' "$manifest" >"$direct_deps"
 while IFS= read -r name; do
   name=${name//$'\r'/}
   [ -n "$name" ] || continue
@@ -522,15 +528,18 @@ while IFS= read -r name; do
   fi
   copy_package "$source" "$dest"
   restored="${restored}${restored:+ }$name"
-done < <(jq -r '.dependencies // {} | keys[]' "$manifest")
+done <"$direct_deps"
 
 pass=0
 while [ "$pass" -lt 20 ]; do
   pass=$((pass + 1))
   added=
+  find "$stage" \( -path "$stage/node_modules/.bin" -o -path "$stage/node_modules/.pnpm" \) \
+    -prune -o -name package.json -print >"$manifest_list"
   while IFS= read -r mf; do
     mf=${mf//$'\r'/}
     [ -f "$mf" ] || continue
+    jq -r '(.dependencies // {}), (.peerDependencies // {}) | keys[]' "$mf" >"$dep_names"
     while IFS= read -r name; do
       name=${name//$'\r'/}
       [ -n "$name" ] || continue
@@ -553,8 +562,8 @@ while [ "$pass" -lt 20 ]; do
       copy_package "$source" "$dest"
       restored="${restored}${restored:+ }$name"
       added=1
-    done < <(jq -r '(.dependencies // {}), (.peerDependencies // {}) | keys[]' "$mf")
-  done < <(find "$stage" \( -path "$stage/node_modules/.bin" -o -path "$stage/node_modules/.pnpm" \) -prune -o -name package.json -print)
+    done <"$dep_names"
+  done <"$manifest_list"
   [ -n "$added" ] || break
 done
 

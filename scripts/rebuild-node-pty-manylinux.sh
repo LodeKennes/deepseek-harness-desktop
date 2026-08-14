@@ -121,6 +121,12 @@ run_args=(
 if [ -d "${HOME:-}/.cache/node-gyp" ]; then
   run_args+=(-v "$HOME/.cache/node-gyp:$HOME/.cache/node-gyp:ro")
 fi
+# The npx fallback writes absolute paths such as ~/.npm/_npx/.../addon.gypi
+# into build/Makefile. The compiler container must see that package tree at
+# the identical path, not only the separately cached Node headers above.
+if [ -d "${HOME:-}/.npm" ]; then
+  run_args+=(-v "$HOME/.npm:$HOME/.npm:ro")
+fi
 # GitHub Actions pnpm/node prefix; local builds usually do not have this.
 if [ -d "${HOME:-}/setup-pnpm" ]; then
   run_args+=(-v "$HOME/setup-pnpm:$HOME/setup-pnpm:ro")
