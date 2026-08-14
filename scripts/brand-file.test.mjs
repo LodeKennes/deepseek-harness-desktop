@@ -47,7 +47,8 @@ test('repo styling.json is a non-DeepSeek brand loaded through the shipped parse
   assert.doesNotMatch(dumped, /3964fe/i)
   assert.ok(styling.tokens['--dsw-alias-brand-primary-new-colorprimary-new-color'])
   assert.ok(styling.tokens['--dsw-font-family'])
-  assert.match(styling.tokens['--dsw-font-family'].light, /Archivo/)
+  assert.match(styling.tokens['--dsw-font-family'].light, /Inter/)
+  assert.doesNotMatch(styling.tokens['--dsw-font-family'].light, /Archivo/)
 })
 
 test('packaged smokes look up binaries from styling.json, not DeepSeek names', () => {

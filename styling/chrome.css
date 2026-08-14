@@ -1,13 +1,16 @@
 @font-face {
-  font-family: "Archivo";
+  font-family: "Inter";
   font-style: normal;
-  font-weight: 400 800;
+  font-weight: 100 900;
   font-display: swap;
-  src: url("/fonts/archivo-latin-static.woff2") format("woff2");
+  src: url("/fonts/inter-latin-variable.woff2") format("woff2");
 }
 
 body {
-  font-family: Archivo, system-ui, sans-serif;
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Chart-paper corners: hairline, not the shipped 12–18px pills. */

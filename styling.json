@@ -16,7 +16,7 @@
     "sidebarActiveAccent": { "light": "#BF352E", "dark": "#E55A4E" }
   },
   "tokens": {
-    "--dsw-font-family": { "light": "Archivo, system-ui, sans-serif", "dark": "Archivo, system-ui, sans-serif" },
+    "--dsw-font-family": { "light": "Inter, system-ui, sans-serif", "dark": "Inter, system-ui, sans-serif" },
     "--dsw-alias-bg-base": { "light": "#E8EDE6", "dark": "#1C1F1A" },
     "--dsw-alias-bg-layer-1": { "light": "#F3F6F2", "dark": "#232821" },
     "--dsw-alias-bg-layer-2": { "light": "#EEF2EC", "dark": "#191E18" },

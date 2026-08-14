@@ -2,7 +2,7 @@ import type { ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { app, BrowserWindow, Menu, shell } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, shell } from 'electron'
 import {
   beginCLIProxyOAuth,
   disconnectCLIProxyProvider,
@@ -39,6 +39,7 @@ import {
   showSubscriptionDemo,
 } from './window.js'
 import { loadDesktopStyling } from './brand.js'
+import { titleBarOverlayColors } from './window-frame.js'
 import { ensureDefaultWorkspace, resolveDefaultWorkspace } from './workspace.js'
 
 let mainWindow: BrowserWindow | null = null
@@ -62,6 +63,7 @@ if (!gotTheLock) {
     mainWindow.focus()
   })
   app.whenReady().then(() => {
+    installWindowControlIpc()
     installMenu()
     launch()
   })
@@ -87,6 +89,25 @@ if (!gotTheLock) {
         app.quit()
       }
     })()
+  })
+}
+
+function installWindowControlIpc(): void {
+  ipcMain.on('desktop:window', (event, action: unknown) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win || win.isDestroyed()) return
+    if (action === 'minimize') win.minimize()
+    else if (action === 'maximize') {
+      if (win.isMaximized()) win.unmaximize()
+      else win.maximize()
+    } else if (action === 'close') win.close()
+  })
+  ipcMain.on('desktop:theme', (event, scheme: unknown) => {
+    if (process.platform !== 'win32') return
+    if (scheme !== 'light' && scheme !== 'dark') return
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win || win.isDestroyed()) return
+    win.setTitleBarOverlay(titleBarOverlayColors(scheme))
   })
 }
 

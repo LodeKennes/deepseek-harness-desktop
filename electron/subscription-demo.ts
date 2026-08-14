@@ -1,12 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { windowChromePageCss, windowControlButtonsHtml } from './window-frame.js'
 
 export const SUBSCRIPTION_DEMO_URL = 'https://dsh-desktop.invalid/subscriptions'
 
-function archivoFontFace(): string {
+function uiFontFace(): string {
   try {
-    const font = readFileSync(fileURLToPath(new URL('../styling/fonts/archivo-latin-static.woff2', import.meta.url)))
-    return `@font-face{font-family:Archivo;font-style:normal;font-weight:400 800;font-display:swap;src:url(data:font/woff2;base64,${font.toString('base64')}) format('woff2')}`
+    const font = readFileSync(fileURLToPath(new URL('../styling/fonts/inter-latin-variable.woff2', import.meta.url)))
+    return `@font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;src:url(data:font/woff2;base64,${font.toString('base64')}) format('woff2')}`
   } catch {
     return ''
   }
@@ -133,6 +134,7 @@ export function parseSubscriptionDemoAction(url: string): SubscriptionDemoAction
 export function renderSubscriptionDemo(
   state: SubscriptionDemoState,
   productName = 'DeepSeek Harness',
+  platform = process.platform,
 ): string {
   const connectedCount = subscriptionProviderIds.filter(
     (provider) => state.statuses[provider] === 'connected',
@@ -156,7 +158,8 @@ export function renderSubscriptionDemo(
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:">
   <title>Connected subscriptions</title>
   <style>
-    ${archivoFontFace()}
+    ${uiFontFace()}
+    ${windowChromePageCss(platform)}
     :root {
       color-scheme: light dark;
       --bg: #E8EDE6;
@@ -203,12 +206,13 @@ export function renderSubscriptionDemo(
       background:
         repeating-linear-gradient(90deg, color-mix(in oklab, var(--text) 8%, transparent) 0 1px, transparent 1px 48px),
         var(--bg);
-      font-family: Archivo, system-ui, sans-serif;
+      font-family: Inter, system-ui, sans-serif;
       line-height: 1.5;
     }
     a { color: inherit; }
     .shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 24px 0; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 18px; -webkit-app-region: drag; }
+    .topbar a, .topbar button { -webkit-app-region: no-drag; }
     .brand { display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 680; letter-spacing: -0.01em; }
     .brand-mark {
       display: grid; place-items: center; width: 31px; height: 31px; border-radius: 2px;
@@ -290,6 +294,8 @@ export function renderSubscriptionDemo(
   </style>
 </head>
 <body>
+  <div class="inkline-drag" aria-hidden="true"></div>
+  ${platform === 'linux' ? windowControlButtonsHtml() : ''}
   <div class="shell">
     <header class="topbar">
       <div class="brand"><span class="brand-mark" aria-hidden="true">${escapeHtml(productName.trim()[0] || 'D')}</span>${escapeHtml(productName)}</div>

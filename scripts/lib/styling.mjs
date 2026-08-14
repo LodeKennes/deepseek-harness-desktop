@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 
 export const LEGACY_WORKSPACE_FOLDER = 'DeepSeek Harness'
@@ -162,12 +162,15 @@ export function resolveAssetPaths(repoRoot, styling) {
  * @param {{ wordmark?: string, logo?: string, favicon?: string }} svgs
  */
 export function planFontOverlays(repoRoot) {
-  const font = join(repoRoot, 'styling', 'fonts', 'archivo-latin-static.woff2')
-  if (!existsSync(font)) return []
-  return [{
-    rel: 'apps/web/public/fonts/archivo-latin-static.woff2',
-    contents: readFileSync(font),
-  }]
+  const dir = join(repoRoot, 'styling', 'fonts')
+  if (!existsSync(dir)) return []
+  return readdirSync(dir)
+    .filter((name) => name.endsWith('.woff2'))
+    .sort()
+    .map((name) => ({
+      rel: `apps/web/public/fonts/${name}`,
+      contents: readFileSync(join(dir, name)),
+    }))
 }
 
 export function planOverlay(styling, svgs) {
@@ -338,10 +341,40 @@ export function apply(ctx, config = {}) {
     http.effect(() => http.webServer.tapIndex((html) => {
       if (!html.includes(NEEDLE)) throw new Error('desktop-brand: request tap needle missing')
       let next = html.replace(NEEDLE, '<title>' + escapeHtml(productName) + '</title>')
-      if (style) next = next.replace('</head>', style + '</head>')
+      if (style) next = next.replace('</head>', style + windowChromeCss() + '</head>')
+      else next = next.replace('</head>', windowChromeCss() + '</head>')
+      next = next.replace(/<html\\b/, '<html data-inkline-chrome="' + process.platform + '"')
+      const linuxBtns = process.platform === 'linux' ? LINUX_WINDOW_BUTTONS : ''
+      next = next.replace(/<body[^>]*>/, (open) => open + '<div class="inkline-drag" aria-hidden="true"></div>' + linuxBtns)
       return next
     }), 'desktop-brand: title+boot-tokens')
   })
+}
+
+const LINUX_WINDOW_BUTTONS = '<div class="inkline-win-btns" role="toolbar" aria-label="Window"><button type="button" data-inkline-window="minimize" aria-label="Minimize"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 5h8" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button><button type="button" data-inkline-window="maximize" aria-label="Maximize"><svg viewBox="0 0 10 10" aria-hidden="true"><rect x="1.5" y="1.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button><button type="button" data-inkline-window="close" aria-label="Close"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2l-6 6" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button></div>'
+
+function windowChromeCss() {
+  const mac = process.platform === 'darwin'
+    ? '[class*="logoRow"]{padding-left:72px;}[data-sidebar-collapsed] [class*="logoRow"]{padding-left:0;}[data-sidebar-collapsed] [class*="sidebarCol"]{padding-top:22px;}'
+    : ''
+  const caption = process.platform === 'win32' || process.platform === 'linux'
+    ? '.inkline-drag{right:140px;}[class*="titleRow"]{padding-right:140px;}'
+    : ''
+  const linux = process.platform === 'linux'
+    ? '.inkline-win-btns{display:flex;}'
+    : '.inkline-win-btns{display:none;}'
+  return '<style>'
+    + '.inkline-drag{position:fixed;top:0;left:0;right:0;height:12px;-webkit-app-region:drag;z-index:2147483000;}'
+    + '[class*="logoRow"],[class*="titleRow"]{-webkit-app-region:drag;}'
+    + '[class*="logoRow"] button,[class*="logoRow"] a,[class*="titleRow"] button,[class*="titleRow"] a,[class*="headerActions"],[class*="headerUtilities"]{-webkit-app-region:no-drag;}'
+    + '.inkline-win-btns{position:fixed;top:0;right:0;height:38px;z-index:2147483001;-webkit-app-region:no-drag;display:none;align-items:stretch;margin:0;padding:0;}'
+    + '.inkline-win-btns button{width:46px;border:0;background:transparent;color:inherit;display:grid;place-items:center;-webkit-app-region:no-drag;}'
+    + '.inkline-win-btns svg{width:10px;height:10px;display:block;}'
+    + '.inkline-win-btns button:hover{background:color-mix(in oklab,currentColor 10%,transparent);}'
+    + '.inkline-win-btns button[data-inkline-window="close"]:hover{background:#BF352E;color:#E8EDE6;}'
+    + 'html[data-inkline-fullscreen] .inkline-win-btns,html[data-inkline-fullscreen] .inkline-drag{display:none!important;}'
+    + linux + mac + caption
+    + '</style>'
 }
 
 function escapeHtml(value) {

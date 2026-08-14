@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
@@ -31,11 +31,15 @@ const files = [...planOverlay(styling, svgs), ...planFontOverlays(repoRoot)]
 const paths = generatedPaths(repoRoot, styling)
 const chromePath = join(repoRoot, 'styling', 'chrome.css')
 const extraCss = existsSync(chromePath) ? readFileSync(chromePath, 'utf8') : ''
-const fontPath = join(repoRoot, 'styling', 'fonts', 'archivo-latin-static.woff2')
+const fontsDir = join(repoRoot, 'styling', 'fonts')
+const fontFiles = existsSync(fontsDir)
+  ? readdirSync(fontsDir).filter((name) => name.endsWith('.woff2')).sort()
+    .map((name) => readFileSync(join(fontsDir, name)))
+  : []
 const assetContents = [
   ...Object.values(assets).map((path) => readFileSync(path)),
   extraCss,
-  ...(existsSync(fontPath) ? [readFileSync(fontPath)] : []),
+  ...fontFiles,
 ]
 const stylingHash = hashStylingInputs(styling, assetContents)
 

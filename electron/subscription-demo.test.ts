@@ -64,8 +64,26 @@ test('renders connector, security, keyboard, and connected-state cues', () => {
   assert.match(html, /:focus-visible/)
   assert.match(html, /#E8EDE6/)
   assert.match(html, /#BF352E/)
-  assert.match(html, /Archivo/)
+  assert.match(html, /Inter/)
+  assert.doesNotMatch(html, /Archivo/)
   assert.doesNotMatch(html, /#2563eb/)
+})
+
+test('subscription screen reserves space for integrated window controls', () => {
+  const mac = renderSubscriptionDemo(createSubscriptionDemoState(), 'Inkline', 'darwin')
+  assert.match(mac, /padding-left: 76px/)
+  assert.match(mac, /inkline-drag/)
+  assert.doesNotMatch(mac, /aria-label="Window"/)
+
+  const win = renderSubscriptionDemo(createSubscriptionDemoState(), 'Inkline', 'win32')
+  assert.match(win, /padding-right: 140px/)
+  assert.doesNotMatch(win, /aria-label="Window"/)
+
+  const linux = renderSubscriptionDemo(createSubscriptionDemoState(), 'Inkline', 'linux')
+  assert.match(linux, /aria-label="Window"/)
+  assert.match(linux, /data-inkline-window="minimize"/)
+  assert.match(linux, /display: flex/)
+  assert.match(linux, /padding-right: 140px/)
 })
 
 test('renders a custom product name from styling', () => {

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { test } from 'node:test'
 import {
   APPROOT_WORDMARK_NEEDLE,
@@ -18,6 +19,7 @@ import {
   hashStylingInputs,
   parseStyling,
   parseSvgMeta,
+  planFontOverlays,
   planOverlay,
   svgInnerToJsx,
 } from './lib/styling.mjs'
@@ -68,6 +70,12 @@ test('maps friendly colors and extra tokens', () => {
   assert.equal(styling.tokens['--dsw-font-family'].dark, 'Inter')
 })
 
+test('font overlay ships Inter and not Archivo', () => {
+  const files = planFontOverlays(join(dirname(fileURLToPath(import.meta.url)), '..'))
+  assert.ok(files.some((file) => file.rel.endsWith('inter-latin-variable.woff2')))
+  assert.equal(files.some((file) => /archivo/i.test(file.rel)), false)
+})
+
 test('plans at most the overlay budget and always includes brand leaves', () => {
   const files = planOverlay(parseStyling({
     ...base,
@@ -106,12 +114,23 @@ test('host plugin fails loud on the title needle and styles body not html', () =
   const host = generateHostPlugin(parseStyling({
     ...base,
     colors: { brandPrimary: { light: '#111', dark: '#eee' } },
-  }), '@font-face{font-family:Archivo}')
+  }), '@font-face{font-family:Inter}')
   assert.match(host, new RegExp(INDEX_TITLE_NEEDLE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   assert.match(host, /body \{/)
   assert.match(host, /body\[data-ds-dark-theme\]/)
-  assert.match(host, /Archivo/)
+  assert.match(host, /Inter/)
   assert.doesNotMatch(host, /html \{/)
+})
+
+test('host plugin integrates window chrome into existing sidebar and header', () => {
+  const host = generateHostPlugin(parseStyling(base))
+  assert.match(host, /data-inkline-chrome/)
+  assert.match(host, /inkline-drag/)
+  assert.match(host, /data-inkline-window="minimize"/)
+  assert.match(host, /\[class\*="logoRow"\]/)
+  assert.match(host, /\[class\*="titleRow"\]/)
+  assert.match(host, /height:12px/)
+  assert.doesNotMatch(host, /\[class\*="frame"\]\{padding-top/)
 })
 
 test('client plugin is factory-form ModuleLoader JS', () => {

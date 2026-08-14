@@ -1,4 +1,4 @@
-import { BrowserWindow, shell } from 'electron'
+import { BrowserWindow, nativeTheme, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 import {
   parseSubscriptionDemoAction,
@@ -6,6 +6,11 @@ import {
   type SubscriptionDemoAction,
   type SubscriptionDemoState,
 } from './subscription-demo.js'
+import {
+  windowChromePageCss,
+  windowControlButtonsHtml,
+  windowFrameOptions,
+} from './window-frame.js'
 
 // Reserved .invalid host so Restart is a normal https navigation we intercept.
 export const RESTART_URL = 'https://dsh-desktop.invalid/restart'
@@ -26,6 +31,8 @@ export interface ErrorPageOptions {
 
 export function createMainWindow(hooks: MainWindowHooks, productName: string): BrowserWindow {
   const preload = fileURLToPath(new URL('./preload.js', import.meta.url))
+  const scheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
+  const frame = windowFrameOptions(process.platform, scheme)
   const win = new BrowserWindow({
     title: productName,
     width: 1280,
@@ -33,6 +40,7 @@ export function createMainWindow(hooks: MainWindowHooks, productName: string): B
     minWidth: 800,
     minHeight: 560,
     show: false,
+    ...frame,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -44,6 +52,7 @@ export function createMainWindow(hooks: MainWindowHooks, productName: string): B
 
   windowHooks.set(win, hooks)
   attachNavigationLock(win)
+  attachWindowChrome(win)
   win.once('ready-to-show', () => {
     if (!win.isDestroyed()) win.show()
   })
@@ -76,7 +85,22 @@ export function showSubscriptionDemo(
   productName: string,
 ): void {
   setSidecarOrigin(win, undefined)
-  void win.loadURL(toDataUrl(renderSubscriptionDemo(state, productName)))
+  void win.loadURL(toDataUrl(renderSubscriptionDemo(state, productName, process.platform)))
+}
+
+function attachWindowChrome(win: BrowserWindow): void {
+  const emitState = () => {
+    if (win.isDestroyed()) return
+    win.webContents.send('desktop:window-state', {
+      maximized: win.isMaximized(),
+      fullscreen: win.isFullScreen(),
+    })
+  }
+  win.on('maximize', emitState)
+  win.on('unmaximize', emitState)
+  win.on('enter-full-screen', emitState)
+  win.on('leave-full-screen', emitState)
+  win.webContents.on('did-finish-load', emitState)
 }
 
 function attachNavigationLock(win: BrowserWindow): void {
@@ -161,7 +185,8 @@ function renderShellHtml(opts: ErrorPageOptions & { restart: boolean }): string 
     @media (prefers-color-scheme: dark) {
       :root { --ink: #E2E9E4; --paper: #1C1F1A; --pen: #E55A4E; }
     }
-    body { font-family: Archivo, system-ui, sans-serif; margin: 0; padding: 48px 32px; line-height: 1.45;
+    ${windowChromePageCss()}
+    body { font-family: Inter, system-ui, sans-serif; margin: 0; padding: 48px 32px; line-height: 1.45;
            color: var(--ink); background: var(--paper); }
     main { max-width: 720px; margin: 0 auto; }
     h1 { font-size: 1.4rem; margin: 0 0 12px; }
@@ -173,6 +198,8 @@ function renderShellHtml(opts: ErrorPageOptions & { restart: boolean }): string 
   </style>
 </head>
 <body>
+  <div class="inkline-drag" aria-hidden="true"></div>
+  ${process.platform === 'linux' ? windowControlButtonsHtml() : ''}
   <main>
     <h1>${escapeHtml(opts.title)}</h1>
     <p>${escapeHtml(opts.detail)}</p>
