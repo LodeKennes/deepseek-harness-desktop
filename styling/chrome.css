@@ -50,3 +50,9 @@ select,
   font-weight: 500;
   letter-spacing: 0.04em;
 }
+
+[class*="stats"],
+[class*="StatsLine"] {
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
