@@ -1,5 +1,16 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { UI_FONT_FAMILY, uiFontFace } from './ui-font.js'
 import { windowChromePageCss, windowControlButtonsHtml } from './window-frame.js'
+
+function brandMarkSvg(): string {
+  try {
+    const svg = readFileSync(fileURLToPath(new URL('../styling/logo.svg', import.meta.url)), 'utf8')
+    return svg.trim().replace(/<svg\b/, '<svg class="brand-mark" aria-hidden="true"')
+  } catch {
+    return '<span class="brand-mark" aria-hidden="true">I</span>'
+  }
+}
 
 export const SUBSCRIPTION_DEMO_URL = 'https://dsh-desktop.invalid/subscriptions'
 
@@ -205,8 +216,7 @@ export function renderSubscriptionDemo(
     .topbar a, .topbar button { -webkit-app-region: no-drag; }
     .brand { display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 500; letter-spacing: 0.01em; }
     .brand-mark {
-      display: grid; place-items: center; width: 31px; height: 31px; border-radius: 2px;
-      color: #E8EDE6; background: #111613; font-size: 14px;
+      display: block; width: 31px; height: 23px; border-radius: 2px; flex: 0 0 auto;
     }
     .demo-badge {
       padding: 5px 9px; border: 1px solid var(--border-strong); border-radius: 2px;
@@ -288,7 +298,7 @@ export function renderSubscriptionDemo(
   ${platform === 'linux' ? windowControlButtonsHtml() : ''}
   <div class="shell">
     <header class="topbar">
-      <div class="brand"><span class="brand-mark" aria-hidden="true">${escapeHtml(productName.trim()[0] || 'D')}</span>${escapeHtml(productName)}</div>
+      <div class="brand">${brandMarkSvg()}${escapeHtml(productName)}</div>
       <span class="demo-badge">Local connector</span>
     </header>
     <main>
