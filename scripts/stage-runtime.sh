@@ -122,11 +122,16 @@ stage_landlock_launcher() {
   fi
 
   if [ -f "$built" ]; then
-    local dest
+    local dest target
     for dest in "${dests[@]}"; do
       mkdir -p "$dest/bin"
-      cp "$built" "$dest/bin/landlock-run"
-      chmod 755 "$dest/bin/landlock-run"
+      target="$dest/bin/landlock-run"
+      # pnpm deploy can hardlink the staged platform package back to the
+      # workspace package. Avoid failing `cp` when both paths are one inode.
+      if [ ! -e "$target" ] || ! [ "$built" -ef "$target" ]; then
+        cp "$built" "$target"
+      fi
+      chmod 755 "$target"
     done
   fi
 
