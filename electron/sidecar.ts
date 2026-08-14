@@ -88,8 +88,8 @@ export async function startSidecar(opts: {
   })
   const argv = [
     entry,
-    ...(opts.patchPath ? ['--patch', opts.patchPath] : []),
     'web',
+    ...(opts.patchPath ? ['--patch', opts.patchPath] : []),
     '--host',
     '127.0.0.1',
     '--port',
