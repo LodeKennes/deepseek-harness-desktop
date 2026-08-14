@@ -400,8 +400,9 @@ fi
 workspace_map=$(mktemp)
 trap 'rm -f "$workspace_map"' EXIT
 find "$clone/packages" "$clone/apps" "$clone/vendor" "$clone/native" \
-  -name package.json \! -path '*/node_modules/*' -print \
+  -name package.json ! -path '*/node_modules/*' -print \
   | while IFS= read -r mf; do
+      mf=${mf%$'\r'}
       jq -r --arg p "$(dirname "$mf")" 'select(.name != null) | .name + "\t" + $p' "$mf"
     done >"$workspace_map"
 
@@ -413,10 +414,18 @@ find_dep_source() {
   local name=$1
   local path
   path=$(awk -F '\t' -v n="$name" '$1 == n { print $2; exit }' "$workspace_map")
+  path=${path%$'\r'}
   if [ -n "$path" ] && [ -e "$path" ]; then
     printf '%s\n' "$path"
     return 0
   fi
+  local vendor
+  for vendor in "$clone"/vendor/*; do
+    if [ -f "$vendor/package.json" ] && [ "$(jq -r .name "$vendor/package.json")" = "$name" ]; then
+      printf '%s\n' "$vendor"
+      return 0
+    fi
+  done
   if [ -e "$clone/apps/cli/node_modules/$name" ]; then
     printf '%s\n' "$clone/apps/cli/node_modules/$name"
     return 0

@@ -379,21 +379,13 @@ if [ -z "$bin" ]; then
   exit 1
 fi
 
-if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
-  sudo chown root:root "$sandbox"
-  sudo chmod 4755 "$sandbox"
-else
-  echo "smoke-packaged: no passwordless sudo; .deb launch uses --disable-setuid-sandbox (CI unpack only)"
-fi
-
-# Fresh Chromium profile dir. Reuse DSH_HOME so heal does not run twice.
+# Unpack is not a real dpkg install: chrome-sandbox is not setuid, and GHA
+# kernels reject the zygote sandbox (EINVAL). The shipped .deb Exec stays
+# clean (asserted above). This launch is CI-only.
+echo "smoke-packaged: unpacked .deb launch uses --no-sandbox (CI unpack only)"
 export HOME="$workdir/home-deb"
 mkdir -p "$HOME"
-
-deb_extra=()
-if [ ! -u "$sandbox" ]; then
-  deb_extra+=(--disable-setuid-sandbox)
-fi
+deb_extra=(--no-sandbox --disable-gpu --disable-dev-shm-usage)
 
 xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24' \
   "$bin" "${deb_extra[@]}" \
