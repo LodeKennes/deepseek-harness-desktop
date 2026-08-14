@@ -76,10 +76,18 @@ require_builtin_name() {
 
 copy_package() {
   local source=$1 dest=$2
+  local real item
   mkdir -p "$(dirname "$dest")"
   if [ -d "$source" ]; then
-    cp -RL "$source" "$dest"
-    rm -rf "$dest/node_modules"
+    # pwd -P resolves one package dir. Do not -L the tree: vendor
+    # node_modules contain cyclic pnpm links.
+    real=$(cd "$source" && pwd -P)
+    mkdir -p "$dest"
+    for item in "$real"/* "$real"/.[!.]*; do
+      [ -e "$item" ] || continue
+      [ "$(basename "$item")" = node_modules ] && continue
+      cp -R "$item" "$dest/"
+    done
   else
     cp -L "$source" "$dest"
   fi
@@ -401,12 +409,6 @@ find_dep_source() {
     printf '%s\n' "$clone/node_modules/$name"
     return 0
   fi
-  for vendor in "$clone"/vendor/*; do
-    if [ -f "$vendor/package.json" ] && [ "$(jq -r .name "$vendor/package.json")" = "$name" ]; then
-      printf '%s\n' "$vendor"
-      return 0
-    fi
-  done
   local store_id=${name//\//+}
   shopt -s nullglob
   for path in "$clone/node_modules/.pnpm/${store_id}@"*/node_modules/"$name"; do
@@ -417,6 +419,12 @@ find_dep_source() {
     fi
   done
   shopt -u nullglob
+  for vendor in "$clone"/vendor/*; do
+    if [ -f "$vendor/package.json" ] && [ "$(jq -r .name "$vendor/package.json")" = "$name" ]; then
+      printf '%s\n' "$vendor"
+      return 0
+    fi
+  done
 }
 
 restored=
