@@ -691,11 +691,22 @@ if jq -e '.. | strings | select(startswith("workspace:"))' "$plugin/package.json
   exit 1
 fi
 rm -rf "$stage/node_modules/desktop-brand"
+mkdir -p "$stage/node_modules"
 cp -R "$plugin" "$stage/node_modules/desktop-brand"
+if [ ! -f "$stage/node_modules/desktop-brand/package.json" ] || [ ! -f "$stage/node_modules/desktop-brand/lib/index.js" ]; then
+  echo "error: desktop-brand copy failed at $stage/node_modules/desktop-brand" >&2
+  exit 1
+fi
 tmp=$(mktemp)
 jq '.dependencies = ((.dependencies // {}) + {"desktop-brand": "0.0.0"})' "$stage/package.json" >"$tmp"
 mv "$tmp" "$stage/package.json"
-node --input-type=module -e "import { createRequire } from 'node:module'; const require = createRequire('$stage/package.json'); require.resolve('desktop-brand/package.json')"
+# Windows Git Bash: Node cannot resolve modules from /d/... paths. Pass a
+# drive-letter path so createRequire looks in the real node_modules tree.
+stage_for_node=$stage
+if command -v cygpath >/dev/null 2>&1; then
+  stage_for_node=$(cygpath -m "$stage")
+fi
+node "$script_dir/assert-desktop-brand.mjs" "$stage_for_node"
 echo "stage-runtime: staged desktop-brand"
 
 echo "stage-runtime: staged $stage"
