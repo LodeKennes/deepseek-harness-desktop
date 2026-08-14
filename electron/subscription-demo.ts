@@ -116,29 +116,70 @@ export function renderSubscriptionDemo(
   <title>${escapeHtml(productName)}</title>
   <style>
     ${windowChromePageCss(platform)}
-    :root { color-scheme: light dark; }
+    :root {
+      color-scheme: light dark;
+      --bg: #f9fafb;
+      --panel: #ffffff;
+      --text: #0f1115;
+      --muted: #61666b;
+      --line: rgba(0, 0, 0, 0.08);
+      --hover: rgba(0, 0, 0, 0.05);
+      --accent: #4176e6;
+      --ok: #15803d;
+      --err: #dc2626;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #151517;
+        --panel: #1b1b1c;
+        --text: #f9fafb;
+        --muted: #979da6;
+        --line: rgba(255, 255, 255, 0.08);
+        --hover: rgba(255, 255, 255, 0.06);
+        --accent: #679efe;
+        --ok: #4ed17e;
+        --err: #f25a5a;
+      }
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      padding: 56px 24px 32px;
-      font: 15px/1.45 system-ui, sans-serif;
-      color: CanvasText;
-      background: Canvas;
+      padding: 64px 24px 32px;
+      font: 14px/22px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
     }
-    main { max-width: 28rem; margin: 0 auto; }
-    h1 { font-size: 1.15rem; font-weight: 600; margin: 0 0 6px; }
-    .lede { margin: 0 0 20px; color: color-mix(in srgb, CanvasText 62%, Canvas); }
-    ul { list-style: none; margin: 0; padding: 0; }
-    li { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid color-mix(in srgb, CanvasText 12%, Canvas); }
-    li:last-of-type { border-bottom: 1px solid color-mix(in srgb, CanvasText 12%, Canvas); }
-    .name { font-weight: 550; }
-    .meta { margin: 2px 0 0; font-size: 13px; color: color-mix(in srgb, CanvasText 62%, Canvas); }
-    .error { color: #b91c1c; }
-    a, .wait { flex: 0 0 auto; font-size: 14px; }
-    a { color: LinkText; }
-    a:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
-    .wait { color: color-mix(in srgb, CanvasText 55%, Canvas); }
-    .continue { display: inline-block; margin-top: 20px; }
+    main { max-width: 400px; margin: 0 auto; }
+    h1 { font-size: 16px; font-weight: 500; line-height: 24px; margin: 0 0 4px; }
+    .lede { margin: 0 0 16px; color: var(--muted); }
+    ul {
+      list-style: none; margin: 0; padding: 4px 0;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    }
+    li {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 12px 14px;
+    }
+    li + li { border-top: 1px solid var(--line); }
+    .name { font-weight: 500; }
+    .meta { margin: 2px 0 0; font-size: 12px; line-height: 18px; color: var(--muted); }
+    .ok { color: var(--ok); }
+    .error { color: var(--err); }
+    .action {
+      flex: 0 0 auto; padding: 5px 12px; border: 1px solid var(--line); border-radius: 12px;
+      color: var(--text); background: var(--panel); text-decoration: none; font-size: 13px; font-weight: 500;
+    }
+    .action:hover { background: var(--hover); }
+    .action:focus-visible, .continue:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .wait { flex: 0 0 auto; font-size: 13px; color: var(--muted); }
+    .continue {
+      display: inline-block; margin-top: 16px; padding: 8px 16px; border-radius: 12px;
+      color: var(--bg); background: var(--text); text-decoration: none; font-weight: 500;
+    }
+    .continue:hover { opacity: .88; }
+    .continue.skip { color: var(--muted); background: transparent; padding-left: 0; }
+    .continue.skip:hover { color: var(--text); opacity: 1; }
   </style>
 </head>
 <body>
@@ -155,7 +196,7 @@ export function renderSubscriptionDemo(
         state.errors[provider.id],
       )).join('')}
     </ul>
-    <a class="continue" href="${actionUrl('continue')}">${continueLabel}</a>
+    <a class="continue${connected ? '' : ' skip'}" href="${actionUrl('continue')}">${continueLabel}</a>
   </main>
 </body>
 </html>`
@@ -175,15 +216,16 @@ function renderProvider(
         ? (error ? escapeHtml(error) : 'Connection failed')
         : ''
   const action = status === 'connected'
-    ? `<a href="${actionUrl('disconnect', provider.id)}">Disconnect</a>`
+    ? `<a class="action" href="${actionUrl('disconnect', provider.id)}">Disconnect</a>`
     : status === 'connecting'
       ? '<span class="wait">Waiting…</span>'
-      : `<a href="${actionUrl('connect', provider.id)}">Connect</a>`
+      : `<a class="action" href="${actionUrl('connect', provider.id)}">Connect</a>`
+  const tone = status === 'connected' ? ' ok' : status === 'error' ? ' error' : ''
 
   return `<li>
     <div>
       <div class="name">${provider.name}</div>
-      ${detail ? `<p class="meta${status === 'error' ? ' error' : ''}" role="status">${detail}</p>` : ''}
+      ${detail ? `<p class="meta${tone}" role="status">${detail}</p>` : ''}
     </div>
     ${action}
   </li>`
