@@ -213,7 +213,7 @@ export function renderSubscriptionDemo(
     .shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 24px 0; }
     .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 18px; -webkit-app-region: drag; }
     .topbar a, .topbar button { -webkit-app-region: no-drag; }
-    .brand { display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 680; letter-spacing: -0.01em; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 500; letter-spacing: 0.01em; }
     .brand-mark {
       display: grid; place-items: center; width: 31px; height: 31px; border-radius: 2px;
       color: #E8EDE6; background: #111613; font-size: 14px;
@@ -221,12 +221,12 @@ export function renderSubscriptionDemo(
     .demo-badge {
       padding: 5px 9px; border: 1px solid var(--border-strong); border-radius: 2px;
       color: var(--muted); background: color-mix(in srgb, var(--panel) 82%, transparent);
-      font-size: 11px; font-weight: 720; letter-spacing: .08em; text-transform: uppercase;
+      font-size: 11px; font-weight: 550; letter-spacing: .08em; text-transform: uppercase;
     }
     main { background: var(--panel); border: 1px solid var(--border); border-radius: 2px; box-shadow: var(--shadow); overflow: hidden; }
     .intro { padding: 24px 36px 20px; border-bottom: 1px solid var(--border); }
-    .eyebrow { margin: 0 0 8px; color: var(--primary); font-size: 12px; font-weight: 760; letter-spacing: .08em; text-transform: uppercase; }
-    h1 { margin: 0; font-size: clamp(27px, 3.2vw, 36px); line-height: 1.14; letter-spacing: -.035em; }
+    .eyebrow { margin: 0 0 8px; color: var(--primary); font-size: 12px; font-weight: 550; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(24px, 3vw, 32px); line-height: 1.2; letter-spacing: -0.02em; font-weight: 550; }
     .lede { max-width: 700px; margin: 9px 0 0; color: var(--muted); font-size: 15px; }
     .trust { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 16px 0 0; padding: 0; color: var(--muted); font-size: 12px; list-style: none; }
     .trust li { display: flex; align-items: center; gap: 7px; }
@@ -246,7 +246,7 @@ export function renderSubscriptionDemo(
     .provider-mark {
       display: grid; flex: 0 0 auto; place-items: center; width: 36px; height: 36px;
       border: 1px solid var(--border-strong); border-radius: 2px; background: var(--panel);
-      color: var(--text); font-size: 14px; font-weight: 760;
+      color: var(--text); font-size: 14px; font-weight: 550;
     }
     .provider-name { min-width: 0; }
     .provider-name h3 { margin: 0; font-size: 14px; line-height: 1.25; }
@@ -254,7 +254,7 @@ export function renderSubscriptionDemo(
     .status {
       width: fit-content; margin: 11px 0 0; padding: 3px 8px; border-radius: 2px;
       color: var(--muted); background: color-mix(in srgb, var(--text) 7%, transparent);
-      font-size: 10px; font-weight: 760; letter-spacing: .04em; text-transform: uppercase;
+      font-size: 10px; font-weight: 550; letter-spacing: .04em; text-transform: uppercase;
     }
     .connected .status { color: var(--success); background: var(--success-soft); }
     .connecting .status { color: var(--progress); background: var(--progress-soft); }
@@ -266,7 +266,7 @@ export function renderSubscriptionDemo(
     .action {
       display: block; margin-top: auto; padding: 7px 11px; border: 1px solid var(--border-strong);
       border-radius: 2px; text-align: center; text-decoration: none; background: var(--panel);
-      font-size: 12px; font-weight: 680;
+      font-size: 12px; font-weight: 500;
     }
     .action:hover { border-color: var(--primary); color: var(--primary); }
     .action:focus-visible, .primary:focus-visible, .secondary:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 38%, transparent); outline-offset: 2px; }
@@ -280,7 +280,7 @@ export function renderSubscriptionDemo(
     .footer-actions { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
     .secondary { color: var(--muted); font-size: 12px; text-decoration: none; }
     .secondary:hover { color: var(--text); text-decoration: underline; }
-    .primary { padding: 9px 14px; border-radius: 2px; color: #E8EDE6; background: #111613; font-size: 12px; font-weight: 720; text-decoration: none; }
+    .primary { padding: 9px 14px; border-radius: 2px; color: #E8EDE6; background: #111613; font-size: 12px; font-weight: 550; text-decoration: none; }
     .primary:hover { background: #3A3F39; }
     @media (max-width: 760px) {
       .shell { width: min(100% - 28px, 600px); padding: 24px 0; }

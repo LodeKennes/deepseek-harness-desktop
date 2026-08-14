@@ -40,6 +40,8 @@ extraResources:
       - "**/*"
   - from: .cache/styling/brand.generated.cordis.yml
     to: brand.cordis.yml
+  - from: resources/desktop-capabilities.cordis.yml
+    to: desktop-capabilities.cordis.yml
   - from: styling.json
     to: styling.json
 afterPack: scripts/after-pack.cjs

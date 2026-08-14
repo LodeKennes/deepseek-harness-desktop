@@ -1,0 +1,14 @@
+# Desktop-only capability patch. Applied after the web-app bundle via --patch.
+# A patch restates a row's whole config (last write wins).
+#
+# Review (2026-08-14): standard already ships files, shell, skills, plan, goals,
+# subagents, workflows, web fetch/search. MCP/LSP/schedule/e2b need extra
+# binaries or empty config and would not help a first-run desktop user.
+# Session FTS ships disabled in the web bundle, so sidebar search only
+# matches titles. This overlay is the one default-on change that is
+# user-visible and does not grow the overlay budget.
+
+- id: session-query-sqlite
+  config:
+    path: !!js dshHomePath('session-query.sqlite')
+    openAt: first-search

@@ -66,6 +66,8 @@ test('renders connector, security, keyboard, and connected-state cues', () => {
   assert.match(html, /#BF352E/)
   assert.match(html, /Inter/)
   assert.doesNotMatch(html, /Archivo/)
+  assert.match(html, /font-weight: 550/)
+  assert.doesNotMatch(html, /font-weight: 7[0-9]{2}/)
   assert.doesNotMatch(html, /#2563eb/)
 })
 

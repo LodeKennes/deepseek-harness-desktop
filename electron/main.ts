@@ -1,6 +1,4 @@
 import type { ChildProcess } from 'node:child_process'
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow, Menu, ipcMain, shell } from 'electron'
 import {
@@ -39,6 +37,7 @@ import {
   showSubscriptionDemo,
 } from './window.js'
 import { loadDesktopStyling } from './brand.js'
+import { resolveDesktopPatchPaths } from './patches.js'
 import { titleBarOverlayColors } from './window-frame.js'
 import { ensureDefaultWorkspace, resolveDefaultWorkspace } from './workspace.js'
 
@@ -256,7 +255,11 @@ async function harnessLaunchOptions(): Promise<{
   readonly patchPaths: readonly string[]
   readonly cliProxyApiKey?: string
 }> {
-  const patchPaths = [...resolveBrandPatchPaths()]
+  const patchPaths = [...resolveDesktopPatchPaths({
+    packaged: app.isPackaged,
+    resourcesPath: process.resourcesPath,
+    repoRoot: fileURLToPath(new URL('..', import.meta.url)),
+  })]
   if (!cliProxy) return { patchPaths }
   const cliproxyPatch = await writeHarnessProxyPatch(cliProxy, cliProxyConnections)
   if (cliproxyPatch) patchPaths.push(cliproxyPatch)
@@ -264,13 +267,6 @@ async function harnessLaunchOptions(): Promise<{
     patchPaths,
     cliProxyApiKey: cliProxy.apiKey,
   }
-}
-
-function resolveBrandPatchPaths(): string[] {
-  const packaged = join(process.resourcesPath, 'brand.cordis.yml')
-  const unpackaged = join(fileURLToPath(new URL('..', import.meta.url)), '.cache', 'styling', 'brand.generated.cordis.yml')
-  const candidate = app.isPackaged ? packaged : unpackaged
-  return existsSync(candidate) ? [candidate] : []
 }
 
 async function startSession(options: {

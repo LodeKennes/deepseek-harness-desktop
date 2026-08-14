@@ -67,7 +67,11 @@ if [ ! -f "$brand_patch" ]; then
 fi
 extra_patch=()
 if [ -f "$brand_patch" ]; then
-  extra_patch=(--patch "$brand_patch")
+  extra_patch+=(--patch "$brand_patch")
+fi
+capabilities_patch="$repo_root/resources/desktop-capabilities.cordis.yml"
+if [ -f "$capabilities_patch" ]; then
+  extra_patch+=(--patch "$capabilities_patch")
 fi
 pid=
 fifo_fd_open=0

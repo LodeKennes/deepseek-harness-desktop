@@ -49,6 +49,11 @@ test('repo styling.json is a non-DeepSeek brand loaded through the shipped parse
   assert.ok(styling.tokens['--dsw-font-family'])
   assert.match(styling.tokens['--dsw-font-family'].light, /Inter/)
   assert.doesNotMatch(styling.tokens['--dsw-font-family'].light, /Archivo/)
+
+  const chrome = readFileSync(join(repoRoot, 'styling', 'chrome.css'), 'utf8')
+  assert.match(chrome, /font-family: "Inter"/)
+  assert.match(chrome, /repeating-linear-gradient/)
+  assert.doesNotMatch(chrome, /Archivo/)
 })
 
 test('packaged smokes look up binaries from styling.json, not DeepSeek names', () => {
@@ -63,6 +68,15 @@ test('packaged smokes look up binaries from styling.json, not DeepSeek names', (
   assert.match(windows, /\$\{product_name\}\.exe/)
   assert.match(windows, /\$\{product_name_safe\}-\*-win-/)
   assert.doesNotMatch(windows, /DeepSeek Harness/)
+})
+
+test('desktop capabilities patch is packaged and applied after brand', () => {
+  const yml = readFileSync(join(repoRoot, 'electron-builder.yml'), 'utf8')
+  assert.match(yml, /from: resources\/desktop-capabilities\.cordis.yml/)
+  const main = readFileSync(join(repoRoot, 'electron', 'main.ts'), 'utf8')
+  assert.match(main, /resolveDesktopPatchPaths/)
+  const smoke = readFileSync(join(repoRoot, 'scripts', 'smoke-sidecar.sh'), 'utf8')
+  assert.match(smoke, /desktop-capabilities\.cordis.yml/)
 })
 
 test('desktop workflow uploads artifacts using styling.json productNameSafe', () => {
