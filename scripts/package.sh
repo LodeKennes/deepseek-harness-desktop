@@ -185,6 +185,7 @@ fi
 if [ -n "$desktop_name" ] && [ "$desktop_name" != "null" ]; then
   builder_args+=("--config.linux.executableName=$desktop_name")
 fi
+builder_args+=("--config.pacman.artifactName=${product_name_safe}-\${version}-\${os}-\${arch}.pkg.tar.zst")
 
 echo "package: electron-builder ${builder_args[*]} --publish never"
 pnpm exec electron-builder "${builder_args[@]}" --publish never

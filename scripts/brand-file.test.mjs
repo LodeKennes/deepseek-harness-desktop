@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -41,4 +41,18 @@ test('repo styling.json is a non-DeepSeek brand loaded through the shipped parse
   for (const pair of mapped) {
     assert.equal(SITE_TOKEN_PAIRS.has(pair), true, `color pair ${pair} is not a public-website token`)
   }
+})
+
+test('packaged smokes look up binaries from styling.json, not DeepSeek names', () => {
+  const packaged = readFileSync(join(repoRoot, 'scripts/smoke-packaged.sh'), 'utf8')
+  const windows = readFileSync(join(repoRoot, 'scripts/smoke-windows.sh'), 'utf8')
+  assert.match(packaged, /jq -r \.productName styling\.json/)
+  assert.match(packaged, /Contents\/MacOS\/\$product_name/)
+  assert.match(packaged, /launch_dir\/\$desktop_name/)
+  assert.doesNotMatch(packaged, /DeepSeek Harness/)
+  assert.doesNotMatch(packaged, /name deepseek-harness/)
+  assert.match(windows, /jq -r \.productName styling\.json/)
+  assert.match(windows, /\$\{product_name\}\.exe/)
+  assert.match(windows, /\$\{product_name_safe\}-\*-win-/)
+  assert.doesNotMatch(windows, /DeepSeek Harness/)
 })

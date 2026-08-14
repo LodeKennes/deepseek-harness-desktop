@@ -23,6 +23,14 @@ case "$(uname -s)" in
 esac
 
 need_cmd curl
+need_cmd jq
+
+product_name=$(jq -r .productName styling.json)
+product_name_safe=$(jq -r .productNameSafe styling.json)
+if [ -z "$product_name" ] || [ "$product_name" = "null" ] || [ -z "$product_name_safe" ] || [ "$product_name_safe" = "null" ]; then
+  echo "error: styling.json is missing productName or productNameSafe" >&2
+  exit 1
+fi
 
 win_path() {
   if command -v cygpath >/dev/null 2>&1; then
@@ -62,8 +70,8 @@ case "$out_dir" in
 esac
 
 pack_arch=$(detect_pack_arch)
-zip=$(find "$out_dir" -maxdepth 1 -type f -name "DeepSeek-Harness-*-win-${pack_arch}.zip" -print -quit || true)
-nsis=$(find "$out_dir" -maxdepth 1 -type f -name "DeepSeek-Harness-*-win-${pack_arch}.exe" -print -quit || true)
+zip=$(find "$out_dir" -maxdepth 1 -type f -name "${product_name_safe}-*-win-${pack_arch}.zip" -print -quit || true)
+nsis=$(find "$out_dir" -maxdepth 1 -type f -name "${product_name_safe}-*-win-${pack_arch}.exe" -print -quit || true)
 
 if [ -z "$zip" ] || [ -z "$nsis" ]; then
   echo "error: expected win-${pack_arch} NSIS .exe and portable .zip in $out_dir" >&2
@@ -93,7 +101,7 @@ else
   tar -xf "$zip" -C "$workdir/app"
 fi
 
-exe=$(find "$workdir/app" -maxdepth 2 -name 'DeepSeek Harness.exe' -print -quit || true)
+exe=$(find "$workdir/app" -maxdepth 2 -name "${product_name}.exe" -print -quit || true)
 node_exe=$(find "$workdir/app" -path '*/resources/harness/node/node.exe' -print -quit || true)
 entry=$(find "$workdir/app" -path '*/resources/harness/sidecar-entry.mjs' -print -quit || true)
 dsh_cmd=$(find "$workdir/app" -path '*/resources/harness/bin/dsh.cmd' -print -quit || true)

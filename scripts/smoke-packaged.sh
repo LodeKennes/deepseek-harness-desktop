@@ -15,6 +15,14 @@ need_cmd() {
 }
 
 need_cmd curl
+need_cmd jq
+
+product_name=$(jq -r .productName styling.json)
+desktop_name=$(jq -r .desktopName styling.json)
+if [ -z "$product_name" ] || [ "$product_name" = "null" ] || [ -z "$desktop_name" ] || [ "$desktop_name" = "null" ]; then
+  echo "error: styling.json is missing productName or desktopName" >&2
+  exit 1
+fi
 
 out_dir=${1:-${PACKAGE_OUT:-$repo_root/dist/installers}}
 case "$out_dir" in
@@ -93,9 +101,9 @@ smoke_packaged_mac() {
   fi
   echo "smoke-packaged: zip has spawn-helper and staged harness"
 
-  bin="$app/Contents/MacOS/DeepSeek Harness"
+  bin="$app/Contents/MacOS/$product_name"
   if [ ! -x "$bin" ]; then
-    echo "error: packaged .app has no DeepSeek Harness binary" >&2
+    echo "error: packaged .app has no $product_name binary" >&2
     ls -la "$app/Contents/MacOS" >&2 || true
     exit 1
   fi
@@ -409,9 +417,9 @@ export HOME="$workdir/home-deb"
 export ELECTRON_DISABLE_SANDBOX=1
 mkdir -p "$HOME" "$DSH_HOME"
 
-# /opt/DeepSeek Harness/ splits Chromium execvp at the space. Relocate.
+# Spaced productName splits Chromium execvp at /opt; package.sh uses productNameSafe.
 opt_dir=$(find "$workdir/deb/opt" -mindepth 1 -maxdepth 1 -type d -print -quit || true)
-launch_dir="$workdir/deb-launch/deepseek-harness"
+launch_dir="$workdir/deb-launch/$desktop_name"
 if [ -z "$opt_dir" ]; then
   echo "error: unpacked .deb has no /opt install directory" >&2
   find "$workdir/deb" -maxdepth 3 -print >&2 || true
@@ -419,12 +427,12 @@ if [ -z "$opt_dir" ]; then
 fi
 mkdir -p "$(dirname "$launch_dir")"
 mv "$opt_dir" "$launch_dir"
-bin="$launch_dir/deepseek-harness"
+bin="$launch_dir/$desktop_name"
 if [ ! -x "$bin" ]; then
-  bin=$(find "$launch_dir" -maxdepth 1 -type f -name deepseek-harness -print -quit || true)
+  bin=$(find "$launch_dir" -maxdepth 1 -type f -name "$desktop_name" -print -quit || true)
 fi
 if [ -z "$bin" ] || [ ! -x "$bin" ]; then
-  echo "error: unpacked .deb has no deepseek-harness binary" >&2
+  echo "error: unpacked .deb has no $desktop_name binary" >&2
   ls -la "$launch_dir" >&2 || true
   exit 1
 fi
