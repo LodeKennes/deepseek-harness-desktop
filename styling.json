@@ -10,22 +10,60 @@
     "favicon": "styling/favicon.svg"
   },
   "colors": {
-    "brandPrimary": {
-      "light": "#111613",
-      "dark": "#E2E9E4"
-    },
-    "sidebarFill": {
-      "light": "#E8EDE6",
-      "dark": "#1C1F1A"
-    },
-    "bubble": {
-      "light": "#D7DFD5",
-      "dark": "#10150F"
-    },
-    "sidebarActiveAccent": {
-      "light": "#35685F",
-      "dark": "#699C92"
-    }
+    "brandPrimary": { "light": "#111613", "dark": "#E2E9E4" },
+    "sidebarFill": { "light": "#E8EDE6", "dark": "#1C1F1A" },
+    "bubble": { "light": "#D7DFD5", "dark": "#10150F" },
+    "sidebarActiveAccent": { "light": "#BF352E", "dark": "#E55A4E" }
+  },
+  "tokens": {
+    "--dsw-font-family": { "light": "Archivo, system-ui, sans-serif", "dark": "Archivo, system-ui, sans-serif" },
+    "--dsw-alias-bg-base": { "light": "#E8EDE6", "dark": "#1C1F1A" },
+    "--dsw-alias-bg-layer-1": { "light": "#F3F6F2", "dark": "#232821" },
+    "--dsw-alias-bg-layer-2": { "light": "#EEF2EC", "dark": "#191E18" },
+    "--dsw-alias-bg-layer-3": { "light": "#E8EDE6", "dark": "#1C1F1A" },
+    "--dsw-alias-bg-overlay": { "light": "#F3F6F2", "dark": "#232821" },
+    "--dsw-alias-bg-module-platform": { "light": "#D7DFD5", "dark": "#10150F" },
+    "--dsw-alias-bg-multi-select": { "light": "#D7DFD5", "dark": "#10150F" },
+    "--dsw-alias-brand-primary-invert": { "light": "#E8EDE6", "dark": "#111613" },
+    "--dsw-alias-brand-primary-new-colorprimary-new-color": { "light": "#BF352E", "dark": "#E55A4E" },
+    "--dsw-alias-brand-text": { "light": "#111613", "dark": "#E2E9E4" },
+    "--dsw-alias-button-info-fill": { "light": "#BF352E", "dark": "#E55A4E" },
+    "--dsw-alias-button-info-hover": { "light": "#9A2A24", "dark": "#EF453C" },
+    "--dsw-alias-button-primary-fill": { "light": "#111613", "dark": "#E2E9E4" },
+    "--dsw-alias-button-primary-hover": { "light": "#3A3F39", "dark": "#F3F6F2" },
+    "--dsw-alias-button-primary-dimmed": { "light": "#D7DFD5", "dark": "#3A3F39" },
+    "--dsw-alias-interactive-bg-active": { "light": "rgba(17, 22, 19, 0.10)", "dark": "rgba(226, 233, 228, 0.14)" },
+    "--dsw-alias-interactive-bg-hover": { "light": "rgba(17, 22, 19, 0.06)", "dark": "rgba(226, 233, 228, 0.08)" },
+    "--dsw-alias-interactive-bg-hover-accent": { "light": "rgba(191, 53, 46, 0.12)", "dark": "rgba(229, 90, 78, 0.20)" },
+    "--dsw-alias-interactive-bg-hover-solid": { "light": "#D7DFD5", "dark": "#3A3F39" },
+    "--dsw-alias-label-primary": { "light": "#111613", "dark": "#E2E9E4" },
+    "--dsw-alias-label-primary-bluish": { "light": "#111613", "dark": "#E2E9E4" },
+    "--dsw-alias-label-primary-dimmed": { "light": "#111613", "dark": "#E2E9E4" },
+    "--dsw-alias-label-secondary": { "light": "#59635D", "dark": "#89938D" },
+    "--dsw-alias-label-tertiary": { "light": "#616B66", "dark": "#7F8A84" },
+    "--dsw-alias-label-caption": { "light": "#616B66", "dark": "#7F8A84" },
+    "--dsw-alias-label-dimmed": { "light": "#D7DFD5", "dark": "#3A3F39" },
+    "--dsw-alias-state-business-primary": { "light": "#35685F", "dark": "#699C92" },
+    "--dsw-alias-state-business-tertiary": { "light": "#D7DFD5", "dark": "#10150F" },
+    "--dsw-alias-state-success-primary": { "light": "#35685F", "dark": "#699C92" },
+    "--dsw-alias-state-success-secondary": { "light": "#35685F", "dark": "#699C92" },
+    "--dsw-alias-state-success-tertiary": { "light": "#D7DFD5", "dark": "#10150F" },
+    "--dsw-alias-state-error-primary": { "light": "#BF352E", "dark": "#E55A4E" },
+    "--dsw-alias-state-error-secondary": { "light": "#E55A4E", "dark": "#EF453C" },
+    "--dsw-alias-markdown-code-block": { "light": "#F3F6F2", "dark": "#10150F" },
+    "--dsw-alias-markdown-code-block-banner": { "light": "#E8EDE6", "dark": "#10150F" },
+    "--dsw-alias-markdown-inline-code": { "light": "#D7DFD5", "dark": "#232821" },
+    "--dsw-alias-markdown-citation": { "light": "#D7DFD5", "dark": "#232821" },
+    "--dsw-alias-markdown-placeholder": { "light": "#D7DFD5", "dark": "#232821" },
+    "--dsw-alias-markdown-tag": { "light": "#D7DFD5", "dark": "#232821" },
+    "--dsw-specific-bubble-highlight": { "light": "#C9D4C8", "dark": "#3A3F39" },
+    "--dsw-specific-input-major": { "light": "#F3F6F2", "dark": "#232821" },
+    "--dsw-specific-login-input": { "light": "#E8EDE6", "dark": "#10150F" },
+    "--dsw-specific-selector": { "light": "#D7DFD5", "dark": "#232821" },
+    "--dsw-specific-sidebar-nav-item-active": { "light": "#D7DFD5", "dark": "#3A3F39" },
+    "--dsw-specific-sidebar-nav-item-hover": { "light": "#EEF2EC", "dark": "#232821" },
+    "--dsw-specific-tip": { "light": "#D7DFD5", "dark": "#232821" },
+    "--dsw-specific-menu": { "light": "#E8EDE6", "dark": "#1C1F1A" }
   },
   "welcome": {
     "en": {

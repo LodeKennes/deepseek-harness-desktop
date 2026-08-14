@@ -62,6 +62,10 @@ test('renders connector, security, keyboard, and connected-state cues', () => {
   assert.match(html, /user@example\.com/)
   assert.match(html, /gpt-example-one/)
   assert.match(html, /:focus-visible/)
+  assert.match(html, /#E8EDE6/)
+  assert.match(html, /#BF352E/)
+  assert.match(html, /Archivo/)
+  assert.doesNotMatch(html, /#2563eb/)
 })
 
 test('renders a custom product name from styling', () => {

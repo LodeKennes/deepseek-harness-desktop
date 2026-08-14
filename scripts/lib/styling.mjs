@@ -161,6 +161,15 @@ export function resolveAssetPaths(repoRoot, styling) {
  * @param {DesktopStyling} styling
  * @param {{ wordmark?: string, logo?: string, favicon?: string }} svgs
  */
+export function planFontOverlays(repoRoot) {
+  const font = join(repoRoot, 'styling', 'fonts', 'archivo-latin-static.woff2')
+  if (!existsSync(font)) return []
+  return [{
+    rel: 'apps/web/public/fonts/archivo-latin-static.woff2',
+    contents: readFileSync(font),
+  }]
+}
+
 export function planOverlay(styling, svgs) {
   /** @type {Array<{ rel: string, contents: string, marker?: string }>} */
   const files = []
@@ -234,14 +243,17 @@ export function writeGeneratedOverlay(destRoot, files) {
 export function applyOverlayToClone(cloneRoot, files, bootWordmark) {
   for (const file of files) {
     const dest = join(cloneRoot, file.rel)
-    if (!existsSync(dest)) {
-      throw new Error(`overlay: upstream missing ${file.rel}`)
-    }
-    if (file.marker) {
-      const current = readFileSync(dest, 'utf8')
-      if (!current.includes(file.marker)) {
-        throw new Error(`overlay: ${file.rel} lost expected marker ${JSON.stringify(file.marker)}`)
+    if (existsSync(dest)) {
+      if (file.marker) {
+        const current = readFileSync(dest, 'utf8')
+        if (!current.includes(file.marker)) {
+          throw new Error(`overlay: ${file.rel} lost expected marker ${JSON.stringify(file.marker)}`)
+        }
       }
+    } else if (file.marker) {
+      throw new Error(`overlay: upstream missing ${file.rel}`)
+    } else {
+      mkdirSync(dirname(dest), { recursive: true })
     }
     writeFileSync(dest, file.contents)
   }
@@ -289,7 +301,7 @@ export function generateBrandYaml(styling) {
 /**
  * @param {DesktopStyling} styling
  */
-export function generateHostPlugin(styling) {
+export function generateHostPlugin(styling, extraCss = '') {
   const tokensJson = JSON.stringify(styling.tokens, null, 2)
   return `import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -297,6 +309,7 @@ import { createRequire } from 'node:module'
 const NEEDLE = ${JSON.stringify(INDEX_TITLE_NEEDLE)}
 const PRODUCT_NAME = ${JSON.stringify(styling.productName)}
 const TOKENS = ${tokensJson}
+const EXTRA_CSS = ${JSON.stringify(extraCss)}
 
 function bootTokenStyle() {
   const light = []
@@ -305,8 +318,11 @@ function bootTokenStyle() {
     light.push(name + ': ' + pair.light)
     dark.push(name + ': ' + pair.dark)
   }
-  if (light.length === 0) return ''
-  return '<style>body { ' + light.join('; ') + '; } body[data-ds-dark-theme] { ' + dark.join('; ') + '; }</style>'
+  const extra = EXTRA_CSS ? EXTRA_CSS : ''
+  if (light.length === 0 && !extra) return ''
+  const lightRule = light.length > 0 ? 'body { ' + light.join('; ') + '; }' : ''
+  const darkRule = dark.length > 0 ? 'body[data-ds-dark-theme] { ' + dark.join('; ') + '; }' : ''
+  return '<style>' + extra + lightRule + darkRule + '</style>'
 }
 
 export function apply(ctx, config = {}) {
@@ -403,11 +419,11 @@ export function generatePluginPackageJson(styling) {
  * @param {string} outDir
  * @param {DesktopStyling} styling
  */
-export function writeDesktopBrandPlugin(outDir, styling) {
+export function writeDesktopBrandPlugin(outDir, styling, extraCss = '') {
   rmSync(outDir, { recursive: true, force: true })
   mkdirSync(join(outDir, 'lib'), { recursive: true })
   writeFileSync(join(outDir, 'package.json'), generatePluginPackageJson(styling))
-  writeFileSync(join(outDir, 'lib/index.js'), generateHostPlugin(styling))
+  writeFileSync(join(outDir, 'lib/index.js'), generateHostPlugin(styling, extraCss))
   if (Object.keys(styling.tokens).length > 0) {
     writeFileSync(join(outDir, 'lib/client.js'), generateClientPlugin(styling))
   }
@@ -435,8 +451,10 @@ export function renderOverlayStamp(opts) {
 export function hashStylingInputs(styling, assetContents) {
   const hash = createHash('sha256')
   hash.update(JSON.stringify(styling))
-  for (const chunk of assetContents) hash.update('\0')
-  for (const chunk of assetContents) hash.update(chunk)
+  for (const chunk of assetContents) {
+    hash.update('\0')
+    hash.update(chunk)
+  }
   return hash.digest('hex')
 }
 

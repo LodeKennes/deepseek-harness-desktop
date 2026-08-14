@@ -26,7 +26,9 @@ HTTPS is the default. Use SSH only as a fallback.
 | `bootWordmark` | Text on the kernel boot plate (replaces `HARNESS`) |
 | `assets.wordmark` / `assets.logo` / `assets.favicon` | Optional SVG paths. Omitted → generated text/letter marks. Installer icons stay in `resources/icons/` |
 | `colors.*` | Friendly `{ light, dark }` pairs mapped to `--dsw-*` tokens |
-| `tokens` | Extra `--dsw-*` pairs for power users |
+| `tokens` | Extra `--dsw-*` pairs (backgrounds, DeepSeek-blue replacements, font) |
+| `styling/chrome.css` | Injected into the sidecar index (`@font-face`, radii) |
+| `styling/fonts/archivo-latin-static.woff2` | Copied to `apps/web/public/fonts/` |
 | `welcome.en` / `welcome.zh` | Overlay of `onboarding-copy.ts` only |
 
 `scripts/apply-styling.mjs generate` writes `.cache/styling/` (overlay, `desktop-brand` plugin, `brand.generated.cordis.yml`). `apply` (from `build-harness.sh`) hard-resets `.cache/harness`, copies overlay files, and patches the `AppRoot` `HARNESS` needle. Missing markers fail the build.

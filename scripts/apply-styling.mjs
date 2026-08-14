@@ -14,6 +14,7 @@ import {
   writeDesktopBrandPlugin,
   writeGeneratedOverlay,
   generateBrandYaml,
+  planFontOverlays,
 } from './lib/styling.mjs'
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -26,10 +27,17 @@ const svgs = {
   logo: assets.logo ? readFileSync(assets.logo, 'utf8') : undefined,
   favicon: assets.favicon ? readFileSync(assets.favicon, 'utf8') : undefined,
 }
-const files = planOverlay(styling, svgs)
+const files = [...planOverlay(styling, svgs), ...planFontOverlays(repoRoot)]
 const paths = generatedPaths(repoRoot, styling)
-const assetContents = Object.values(assets).map((path) => readFileSync(path))
-const stylingHash = hashStylingInputs(styling, assetContents.map((buf) => buf.toString('utf8')))
+const chromePath = join(repoRoot, 'styling', 'chrome.css')
+const extraCss = existsSync(chromePath) ? readFileSync(chromePath, 'utf8') : ''
+const fontPath = join(repoRoot, 'styling', 'fonts', 'archivo-latin-static.woff2')
+const assetContents = [
+  ...Object.values(assets).map((path) => readFileSync(path)),
+  extraCss,
+  ...(existsSync(fontPath) ? [readFileSync(fontPath)] : []),
+]
+const stylingHash = hashStylingInputs(styling, assetContents)
 
 if (command === 'validate') {
   console.log(`apply-styling: ${styling.productName} ok (${files.length} overlay files)`)
@@ -43,7 +51,7 @@ if (command !== 'generate' && command !== 'apply') {
 
 mkdirSync(paths.root, { recursive: true })
 writeGeneratedOverlay(paths.overlay, files)
-writeDesktopBrandPlugin(paths.plugin, styling)
+writeDesktopBrandPlugin(paths.plugin, styling, extraCss)
 writeFileSync(paths.brandYaml, generateBrandYaml(styling))
 writeFileSync(join(paths.root, 'hash'), `${stylingHash}\n`)
 console.log(`apply-styling: generated ${files.length} overlay files + desktop-brand → ${paths.root}`)

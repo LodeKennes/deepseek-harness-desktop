@@ -41,6 +41,13 @@ test('repo styling.json is a non-DeepSeek brand loaded through the shipped parse
   for (const pair of mapped) {
     assert.equal(SITE_TOKEN_PAIRS.has(pair), true, `color pair ${pair} is not a public-website token`)
   }
+  const dumped = JSON.stringify(styling.tokens)
+  assert.doesNotMatch(dumped, /65,\s*118,\s*230/)
+  assert.doesNotMatch(dumped, /#2563eb/i)
+  assert.doesNotMatch(dumped, /3964fe/i)
+  assert.ok(styling.tokens['--dsw-alias-brand-primary-new-colorprimary-new-color'])
+  assert.ok(styling.tokens['--dsw-font-family'])
+  assert.match(styling.tokens['--dsw-font-family'].light, /Archivo/)
 })
 
 test('packaged smokes look up binaries from styling.json, not DeepSeek names', () => {

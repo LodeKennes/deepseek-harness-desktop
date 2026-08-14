@@ -106,10 +106,11 @@ test('host plugin fails loud on the title needle and styles body not html', () =
   const host = generateHostPlugin(parseStyling({
     ...base,
     colors: { brandPrimary: { light: '#111', dark: '#eee' } },
-  }))
+  }), '@font-face{font-family:Archivo}')
   assert.match(host, new RegExp(INDEX_TITLE_NEEDLE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   assert.match(host, /body \{/)
   assert.match(host, /body\[data-ds-dark-theme\]/)
+  assert.match(host, /Archivo/)
   assert.doesNotMatch(host, /html \{/)
 })
 

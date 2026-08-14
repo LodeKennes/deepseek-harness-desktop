@@ -1,0 +1,19 @@
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/archivo-latin-static.woff2") format("woff2");
+}
+
+body {
+  font-family: Archivo, system-ui, sans-serif;
+}
+
+/* Chart-paper corners: hairline, not the shipped 12–18px pills. */
+button,
+input,
+textarea,
+select {
+  border-radius: 2px;
+}

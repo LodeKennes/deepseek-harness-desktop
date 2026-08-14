@@ -157,15 +157,19 @@ function renderShellHtml(opts: ErrorPageOptions & { restart: boolean }): string 
   <meta charset="utf-8">
   <title>${escapeHtml(opts.title)}</title>
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, sans-serif; margin: 0; padding: 48px 32px; line-height: 1.45; }
+    :root { color-scheme: light dark; --ink: #111613; --paper: #E8EDE6; --pen: #BF352E; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #E2E9E4; --paper: #1C1F1A; --pen: #E55A4E; }
+    }
+    body { font-family: Archivo, system-ui, sans-serif; margin: 0; padding: 48px 32px; line-height: 1.45;
+           color: var(--ink); background: var(--paper); }
     main { max-width: 720px; margin: 0 auto; }
     h1 { font-size: 1.4rem; margin: 0 0 12px; }
     p { margin: 0 0 16px; }
-    pre { white-space: pre-wrap; word-break: break-word; padding: 12px; border-radius: 8px;
+    pre { white-space: pre-wrap; word-break: break-word; padding: 12px; border-radius: 2px;
           background: color-mix(in srgb, currentColor 8%, transparent); font-size: 12px; }
-    a.restart { display: inline-block; padding: 8px 16px; border-radius: 8px; text-decoration: none;
-                background: #2563eb; color: #fff; }
+    a.restart { display: inline-block; padding: 8px 16px; border-radius: 2px; text-decoration: none;
+                background: var(--ink); color: var(--paper); }
   </style>
 </head>
 <body>
