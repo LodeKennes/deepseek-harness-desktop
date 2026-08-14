@@ -12,9 +12,9 @@
     "tag": null
   },
   "runtimes": {
-    "node": "24.5.0",
-    "pnpm": "11.7.0",
-    "electron": "37.2.6",
-    "cliProxyApi": "7.2.74"
+    "node": "24.19.0",
+    "pnpm": "11.21.0",
+    "electron": "43.4.0",
+    "cliProxyApi": "7.2.132"
   }
 }

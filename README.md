@@ -107,15 +107,16 @@ Use the upstream channels. This packager does not host a separate community.
 | --- | --- |
 | Desktop base | `0.1.0` · `ai.deepseek.harness.desktop` |
 | Harness | `0.1.0-rc.5` at `47f943859bef60e4160492346772ded9b24f765a` |
-| Node (bundled) | `24.5.0` |
-| Electron | `37.2.6` |
-| CLIProxyAPI | `7.2.74` |
+| Node (bundled) | `24.19.0` |
+| pnpm | `11.21.0` |
+| Electron | `43.4.0` |
+| CLIProxyAPI | `7.2.132` |
 
 A push to `master` publishes `desktop-v0.1.0-N`. Bumping the base version or the harness SHA is a deliberate commit here. There is no git submodule and no vendored Harness tree.
 
 ## Development
 
-You need Git, `jq`, **Node 24**, and **pnpm 11.7.0**. The scripts do not install them.
+You need Git, `jq`, **Node 24**, and **pnpm 11.21.0**. The scripts do not install them.
 
 ```sh
 ./scripts/stage-runtime.sh      # pin → build Harness → stage sidecar + Node

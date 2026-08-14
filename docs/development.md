@@ -39,7 +39,7 @@ Do not overlay `AppRoot.tsx` as a whole file. Do not rewrite hashed Vite `index-
 
 ## Fetch and build
 
-From the repository root. Requires `git` and `jq`. Building also requires Node 24 and pnpm 11.7.0 on `PATH` (see `runtimes` in `versions.json`). The scripts do not install Node or pnpm.
+From the repository root. Requires `git` and `jq`. Building also requires Node 24 and pnpm 11.21.0 on `PATH` (see `runtimes` in `versions.json`). The scripts do not install Node or pnpm.
 
 ```sh
 ./scripts/fetch-harness.sh    # clone or update .cache/harness to the pin

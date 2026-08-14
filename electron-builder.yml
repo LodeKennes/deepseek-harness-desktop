@@ -3,7 +3,7 @@ productName: DeepSeek Harness
 asar: true
 npmRebuild: false
 nodeGypRebuild: false
-electronVersion: 37.2.6
+electronVersion: 43.4.0
 # Always pass --publish never from package.sh; no publisher in v1.
 publish: null
 

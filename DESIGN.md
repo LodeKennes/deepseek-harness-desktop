@@ -4,7 +4,7 @@
 - Status: Implemented
 - Last refreshed: 2026-08-14
 - Primary product surfaces: desktop first-run subscription setup, connection management, and the embedded DeepSeek Harness web application.
-- Evidence reviewed: the desktop shell, packaged-runtime layout, and CLIProxyAPI v7.2.74 management API and release artifacts.
+- Evidence reviewed: the desktop shell, packaged-runtime layout, and CLIProxyAPI v7.2.132 management API and release artifacts.
 
 ## Brand
 - Personality: calm, direct, privacy-conscious, and useful to developers without assuming terminal expertise.
