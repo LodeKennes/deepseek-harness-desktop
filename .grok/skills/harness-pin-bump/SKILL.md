@@ -49,11 +49,9 @@ Smoke `GET /` must be HTTP 200 with `<title>` equal to `styling.json` `productNa
 
 Boot the staged app (`pnpm start` after `tsc`). Confirm:
 
-- Boot plate shows `bootWordmark`, not `HARNESS`
-- Expanded sidebar shows the generated/overlaid wordmark, not the whale, unless `assets.wordmark` is still a DeepSeek SVG
-- Welcome copy matches `styling.json` `welcome` (do not also overlay `locales.ts`; it imports `WELCOME_NOTICE_COPY`)
-- First paint is not stuck on `#3964fe` — boot `<style>` must target `body` / `body[data-ds-dark-theme]`, never `html`
-- UI face is Inter (or the current `styling.json` `--dsw-font-family`), not Archivo
+- Boot plate shows `bootWordmark` (`HARNESS` for stock DeepSeek)
+- Expanded sidebar shows the upstream whale unless `assets.wordmark` is set
+- Welcome copy is upstream unless `styling.json` `welcome` is set
 - `--patch resources/desktop-capabilities.cordis.yml` is still applied after brand (sidebar session search)
 
 ## Hard rules

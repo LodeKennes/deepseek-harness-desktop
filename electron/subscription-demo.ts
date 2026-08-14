@@ -1,16 +1,5 @@
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { UI_FONT_FAMILY, uiFontFace } from './ui-font.js'
 import { windowChromePageCss, windowControlButtonsHtml } from './window-frame.js'
-
-function brandMarkSvg(): string {
-  try {
-    const svg = readFileSync(fileURLToPath(new URL('../styling/logo.svg', import.meta.url)), 'utf8')
-    return svg.trim().replace(/<svg\b/, '<svg class="brand-mark" aria-hidden="true"')
-  } catch {
-    return '<span class="brand-mark" aria-hidden="true">I</span>'
-  }
-}
 
 export const SUBSCRIPTION_DEMO_URL = 'https://dsh-desktop.invalid/subscriptions'
 
@@ -163,39 +152,39 @@ export function renderSubscriptionDemo(
     ${windowChromePageCss(platform)}
     :root {
       color-scheme: light dark;
-      --bg: #E8EDE6;
-      --panel: #F3F6F2;
-      --panel-muted: #D7DFD5;
-      --text: #111613;
-      --muted: #59635D;
-      --border: color-mix(in oklab, #111613 14%, transparent);
-      --border-strong: color-mix(in oklab, #111613 22%, transparent);
-      --primary: #BF352E;
-      --primary-hover: #9A2A24;
-      --primary-soft: color-mix(in oklab, #BF352E 12%, #E8EDE6);
-      --success: #35685F;
-      --success-soft: color-mix(in oklab, #35685F 14%, #E8EDE6);
-      --progress: #BF352E;
-      --progress-soft: color-mix(in oklab, #BF352E 12%, #E8EDE6);
-      --shadow: none;
+      --bg: #f4f6fa;
+      --panel: #ffffff;
+      --panel-muted: #f7f8fb;
+      --text: #172033;
+      --muted: #657085;
+      --border: #dce1e9;
+      --border-strong: #cbd3df;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --success: #15803d;
+      --success-soft: #f0fdf4;
+      --progress: #a16207;
+      --progress-soft: #fffbeb;
+      --shadow: 0 18px 46px rgba(23, 32, 51, 0.10);
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #1C1F1A;
-        --panel: #232821;
-        --panel-muted: #10150F;
-        --text: #E2E9E4;
-        --muted: #89938D;
-        --border: color-mix(in oklab, #E2E9E4 10.5%, transparent);
-        --border-strong: color-mix(in oklab, #E2E9E4 18%, transparent);
-        --primary: #E55A4E;
-        --primary-hover: #EF453C;
-        --primary-soft: color-mix(in oklab, #E55A4E 18%, #1C1F1A);
-        --success: #699C92;
-        --success-soft: color-mix(in oklab, #699C92 16%, #1C1F1A);
-        --progress: #E55A4E;
-        --progress-soft: color-mix(in oklab, #E55A4E 16%, #1C1F1A);
-        --shadow: none;
+        --bg: #10141d;
+        --panel: #181e29;
+        --panel-muted: #121823;
+        --text: #f1f5f9;
+        --muted: #a5afbf;
+        --border: #2d3747;
+        --border-strong: #3d495d;
+        --primary: #60a5fa;
+        --primary-hover: #93c5fd;
+        --primary-soft: #172554;
+        --success: #86efac;
+        --success-soft: #143220;
+        --progress: #facc15;
+        --progress-soft: #352d0f;
+        --shadow: 0 20px 55px rgba(0, 0, 0, 0.30);
       }
     }
     * { box-sizing: border-box; }
@@ -205,7 +194,7 @@ export function renderSubscriptionDemo(
       margin: 0;
       color: var(--text);
       background:
-        repeating-linear-gradient(90deg, color-mix(in oklab, var(--text) 8%, transparent) 0 1px, transparent 1px 48px),
+        radial-gradient(circle at 15% -15%, color-mix(in srgb, var(--primary) 13%, transparent), transparent 34rem),
         var(--bg);
       font-family: ${UI_FONT_FAMILY};
       line-height: 1.5;
@@ -214,19 +203,21 @@ export function renderSubscriptionDemo(
     .shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 24px 0; }
     .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 18px; -webkit-app-region: drag; }
     .topbar a, .topbar button { -webkit-app-region: no-drag; }
-    .brand { display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 500; letter-spacing: 0.01em; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 680; letter-spacing: -0.01em; }
     .brand-mark {
-      display: block; width: 31px; height: 23px; border-radius: 2px; flex: 0 0 auto;
+      display: grid; place-items: center; width: 31px; height: 31px; border-radius: 9px;
+      color: white; background: linear-gradient(145deg, #2563eb, #1647b8); font-size: 14px;
+      box-shadow: inset 0 1px rgba(255,255,255,.28);
     }
     .demo-badge {
-      padding: 5px 9px; border: 1px solid var(--border-strong); border-radius: 2px;
+      padding: 5px 9px; border: 1px solid var(--border-strong); border-radius: 999px;
       color: var(--muted); background: color-mix(in srgb, var(--panel) 82%, transparent);
-      font-size: 11px; font-weight: 550; letter-spacing: .08em; text-transform: uppercase;
+      font-size: 11px; font-weight: 720; letter-spacing: .08em; text-transform: uppercase;
     }
-    main { background: var(--panel); border: 1px solid var(--border); border-radius: 2px; box-shadow: var(--shadow); overflow: hidden; }
+    main { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; }
     .intro { padding: 24px 36px 20px; border-bottom: 1px solid var(--border); }
-    .eyebrow { margin: 0 0 8px; color: var(--primary); font-size: 12px; font-weight: 550; letter-spacing: .08em; text-transform: uppercase; }
-    h1 { margin: 0; font-size: clamp(24px, 3vw, 32px); line-height: 1.2; letter-spacing: -0.02em; font-weight: 550; }
+    .eyebrow { margin: 0 0 8px; color: var(--primary); font-size: 12px; font-weight: 760; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(27px, 3.2vw, 36px); line-height: 1.14; letter-spacing: -.035em; }
     .lede { max-width: 700px; margin: 9px 0 0; color: var(--muted); font-size: 15px; }
     .trust { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 16px 0 0; padding: 0; color: var(--muted); font-size: 12px; list-style: none; }
     .trust li { display: flex; align-items: center; gap: 7px; }
@@ -238,21 +229,21 @@ export function renderSubscriptionDemo(
     .providers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
     .provider {
       min-width: 0; height: 100%; padding: 15px; border: 1px solid var(--border);
-      border-radius: 2px; background: var(--panel-muted); display: flex; flex-direction: column;
+      border-radius: 14px; background: var(--panel-muted); display: flex; flex-direction: column;
     }
     .provider.connected { border-color: color-mix(in srgb, var(--success) 42%, var(--border)); background: color-mix(in srgb, var(--success-soft) 55%, var(--panel)); }
     .provider.connecting { border-color: color-mix(in srgb, var(--progress) 40%, var(--border)); background: color-mix(in srgb, var(--progress-soft) 48%, var(--panel)); }
     .provider-head { display: flex; align-items: center; gap: 11px; }
     .provider-mark {
       display: grid; flex: 0 0 auto; place-items: center; width: 36px; height: 36px;
-      border: 1px solid var(--border-strong); border-radius: 2px; background: var(--panel);
+      border: 1px solid var(--border-strong); border-radius: 11px; background: var(--panel);
       color: var(--text); font-size: 14px; font-weight: 550;
     }
     .provider-name { min-width: 0; }
     .provider-name h3 { margin: 0; font-size: 14px; line-height: 1.25; }
     .provider-name p { margin: 2px 0 0; color: var(--muted); font-size: 11px; }
     .status {
-      width: fit-content; margin: 11px 0 0; padding: 3px 8px; border-radius: 2px;
+      width: fit-content; margin: 11px 0 0; padding: 3px 8px; border-radius: 999px;
       color: var(--muted); background: color-mix(in srgb, var(--text) 7%, transparent);
       font-size: 10px; font-weight: 550; letter-spacing: .04em; text-transform: uppercase;
     }
@@ -262,17 +253,17 @@ export function renderSubscriptionDemo(
     .description { min-height: 56px; margin: 9px 0 11px; color: var(--muted); font-size: 12px; }
     .provider-error { margin: -4px 0 10px; color: #b91c1c; font-size: 11px; }
     .models { display: flex; flex-wrap: wrap; gap: 6px; margin: -3px 0 10px; padding: 0; list-style: none; }
-    .model { padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--success) 32%, var(--border)); border-radius: 2px; color: var(--success); font-size: 10px; }
+    .model { padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--success) 32%, var(--border)); border-radius: 999px; color: var(--success); font-size: 10px; }
     .action {
       display: block; margin-top: auto; padding: 7px 11px; border: 1px solid var(--border-strong);
-      border-radius: 2px; text-align: center; text-decoration: none; background: var(--panel);
-      font-size: 12px; font-weight: 500;
+      border-radius: 10px; text-align: center; text-decoration: none; background: var(--panel);
+      font-size: 12px; font-weight: 680;
     }
     .action:hover { border-color: var(--primary); color: var(--primary); }
     .action:focus-visible, .primary:focus-visible, .secondary:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 38%, transparent); outline-offset: 2px; }
     .action[aria-disabled="true"] { color: var(--muted); cursor: wait; opacity: .75; }
-    .ready { display: flex; align-items: flex-start; gap: 12px; margin-top: 12px; padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--success) 35%, var(--border)); border-radius: 2px; background: var(--success-soft); }
-    .ready-icon { display: grid; flex: 0 0 auto; place-items: center; width: 25px; height: 25px; border-radius: 2px; color: #E8EDE6; background: var(--success); font-size: 13px; font-weight: 800; }
+    .ready { display: flex; align-items: flex-start; gap: 12px; margin-top: 12px; padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--success) 35%, var(--border)); border-radius: 12px; background: var(--success-soft); }
+    .ready-icon { display: grid; flex: 0 0 auto; place-items: center; width: 25px; height: 25px; border-radius: 999px; color: #fff; background: var(--success); font-size: 13px; font-weight: 800; }
     .ready h2 { margin: 0; font-size: 13px; }
     .ready p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
     footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 15px 36px; border-top: 1px solid var(--border); background: var(--panel-muted); }
@@ -280,8 +271,8 @@ export function renderSubscriptionDemo(
     .footer-actions { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
     .secondary { color: var(--muted); font-size: 12px; text-decoration: none; }
     .secondary:hover { color: var(--text); text-decoration: underline; }
-    .primary { padding: 9px 14px; border-radius: 2px; color: #E8EDE6; background: #111613; font-size: 12px; font-weight: 550; text-decoration: none; }
-    .primary:hover { background: #3A3F39; }
+    .primary { padding: 9px 14px; border-radius: 10px; color: #fff; background: #2563eb; font-size: 12px; font-weight: 720; text-decoration: none; }
+    .primary:hover { background: #1d4ed8; }
     @media (max-width: 760px) {
       .shell { width: min(100% - 28px, 600px); padding: 24px 0; }
       .topbar { margin-bottom: 20px; }
@@ -298,7 +289,7 @@ export function renderSubscriptionDemo(
   ${platform === 'linux' ? windowControlButtonsHtml() : ''}
   <div class="shell">
     <header class="topbar">
-      <div class="brand">${brandMarkSvg()}${escapeHtml(productName)}</div>
+      <div class="brand"><span class="brand-mark" aria-hidden="true">${escapeHtml(productName.trim()[0] || 'D')}</span>${escapeHtml(productName)}</div>
       <span class="demo-badge">Local connector</span>
     </header>
     <main>

@@ -71,21 +71,24 @@ test('maps friendly colors and extra tokens', () => {
   assert.equal(styling.tokens['--dsw-font-family'].dark, 'Inter')
 })
 
-test('font overlay ships Inter and not Archivo', () => {
-  const files = planFontOverlays(join(dirname(fileURLToPath(import.meta.url)), '..'))
-  assert.ok(files.some((file) => file.rel.endsWith('inter-latin-variable.woff2')))
-  assert.ok(files.some((file) => file.rel.endsWith('inter-latin-italic-variable.woff2')))
-  assert.equal(files.some((file) => /archivo/i.test(file.rel)), false)
+test('stock identity does not overlay DeepSeek wordmark or logo', () => {
+  const files = planOverlay(parseStyling(base), {})
+  assert.equal(files.some((file) => file.rel.endsWith('BrandWordmark.tsx')), false)
+  assert.equal(files.some((file) => file.rel.endsWith('FishLogo.tsx')), false)
+  assert.equal(planFontOverlays(join(dirname(fileURLToPath(import.meta.url)), '..')).length, 0)
 })
 
-test('plans at most the overlay budget and always includes brand leaves', () => {
+test('plans at most the overlay budget and includes brand leaves when assets exist', () => {
   const files = planOverlay(parseStyling({
     ...base,
     welcome: {
       en: { title: 'Hi', body: 'Hello', continueLabel: 'Go' },
       zh: { title: '你好', body: '欢迎', continueLabel: '继续' },
     },
-  }), {})
+  }), {
+    wordmark: generateTextWordmarkSvg('Acme Harness'),
+    logo: '<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>',
+  })
   assert.ok(files.length <= OVERLAY_FILE_BUDGET)
   assert.ok(files.some((file) => file.rel.endsWith('BrandWordmark.tsx')))
   assert.ok(files.some((file) => file.rel.endsWith('FishLogo.tsx')))
@@ -124,15 +127,13 @@ test('host plugin fails loud on the title needle and styles body not html', () =
   assert.doesNotMatch(host, /html \{/)
 })
 
-test('generated host plugin carries the shipped Inter chrome, not Archivo', () => {
+test('generated host plugin does not inject a custom UI face', () => {
   const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
   const extra = readFileSync(join(repoRoot, 'styling', 'chrome.css'), 'utf8')
   const host = generateHostPlugin(loadStyling(repoRoot), extra)
-  assert.match(host, /Inter/)
-  assert.match(host, /inter-latin-variable\.woff2/)
-  assert.match(host, /--dsw-font-family/)
+  assert.doesNotMatch(host, /Inter/)
   assert.doesNotMatch(host, /Archivo/)
-  assert.doesNotMatch(host, /archivo-latin-static/)
+  assert.doesNotMatch(host, /--dsw-font-family/)
 })
 
 test('host plugin integrates window chrome into existing sidebar and header', () => {

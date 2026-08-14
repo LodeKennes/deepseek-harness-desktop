@@ -32,12 +32,12 @@
 - Tradeoffs: the implementation favors one pinned, local sidecar and its existing API over a new authentication or routing layer.
 
 ## Visual language
-- Color: Recorder chart paper and ink (`#E8EDE6` / `#111613`), pen red for accents only (`#BF352E`), state green for success. Night paper is the same instrument on darker stock, not an invert.
-- Typography: Inter as the application face (quiet grotesk, not the site’s Archivo display). Body 400, headings 550–600. No faux bold/italic.
-- Spacing/layout rhythm: 4/8 px-derived spacing, a centered content column, and a responsive card grid.
-- Shape/radius/elevation: 2px chart-paper corners, 48px vertical weave, no drop shadows.
+- Color: neutral slate surfaces with a blue primary action, green success, amber progress, and system light/dark adaptation.
+- Typography: native system UI fonts; compact display headings; readable 14–16 px body copy.
+- Spacing/layout rhythm: 4/8 px-derived spacing, a centered 1040 px content column, and a responsive card grid.
+- Shape/radius/elevation: 10–18 px radii, fine borders, and restrained shadows used only to separate the main panel.
 - Motion: no required animation; progress is communicated with text and a status indicator.
-- Imagery/iconography: the Inkline wordmark (paper plate + pen stroke); provider marks are illustrative, not official logos.
+- Imagery/iconography: simple letter marks and small inline status symbols; provider marks are illustrative, not official logos. The embedded Harness UI keeps its upstream whale wordmark.
 
 ## Components
 - Existing components to reuse: the secured `BrowserWindow`, data-URL shell rendering, reserved `.invalid` navigation actions, and the application menu.

@@ -176,42 +176,50 @@ export function planFontOverlays(repoRoot) {
 export function planOverlay(styling, svgs) {
   /** @type {Array<{ rel: string, contents: string, marker?: string }>} */
   const files = []
-  files.push({
-    rel: OVERLAY_TARGETS.wordmark,
-    contents: generateIconTsx({
-      exportName: 'BrandWordmark',
-      sizeIsHeight: true,
-      defaultSize: 24,
-      svg: svgs.wordmark ?? generateTextWordmarkSvg(styling.productName),
-    }),
-    marker: OVERLAY_MARKERS[OVERLAY_TARGETS.wordmark],
-  })
-  files.push({
-    rel: OVERLAY_TARGETS.logo,
-    contents: generateIconTsx({
-      exportName: 'FishLogo',
-      sizeIsHeight: false,
-      defaultSize: 24,
-      svg: svgs.logo ?? generateLetterLogoSvg(styling.productName),
-    }),
-    marker: OVERLAY_MARKERS[OVERLAY_TARGETS.logo],
-  })
-  files.push({
-    rel: OVERLAY_TARGETS.favicon,
-    contents: svgs.favicon ?? generateFaviconSvg(styling.productName),
-  })
-  files.push({
-    rel: OVERLAY_TARGETS.manifest,
-    contents: `${JSON.stringify({
-      id: '/',
-      name: styling.productName,
-      short_name: styling.productNameSafe,
-      start_url: '/',
-      scope: '/',
-      display: 'fullscreen',
-      icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
-    }, null, 2)}\n`,
-  })
+  if (svgs.wordmark) {
+    files.push({
+      rel: OVERLAY_TARGETS.wordmark,
+      contents: generateIconTsx({
+        exportName: 'BrandWordmark',
+        sizeIsHeight: true,
+        defaultSize: 24,
+        svg: svgs.wordmark,
+      }),
+      marker: OVERLAY_MARKERS[OVERLAY_TARGETS.wordmark],
+    })
+  }
+  if (svgs.logo) {
+    files.push({
+      rel: OVERLAY_TARGETS.logo,
+      contents: generateIconTsx({
+        exportName: 'FishLogo',
+        sizeIsHeight: false,
+        defaultSize: 24,
+        svg: svgs.logo,
+      }),
+      marker: OVERLAY_MARKERS[OVERLAY_TARGETS.logo],
+    })
+  }
+  if (svgs.favicon) {
+    files.push({
+      rel: OVERLAY_TARGETS.favicon,
+      contents: svgs.favicon,
+    })
+  }
+  if (svgs.wordmark || svgs.logo || svgs.favicon) {
+    files.push({
+      rel: OVERLAY_TARGETS.manifest,
+      contents: `${JSON.stringify({
+        id: '/',
+        name: styling.productName,
+        short_name: styling.productNameSafe,
+        start_url: '/',
+        scope: '/',
+        display: 'fullscreen',
+        icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+      }, null, 2)}\n`,
+    })
+  }
   if (styling.welcome) {
     files.push({
       rel: OVERLAY_TARGETS.welcome,
@@ -371,7 +379,7 @@ function windowChromeCss() {
     + '.inkline-win-btns button{width:46px;border:0;background:transparent;color:inherit;display:grid;place-items:center;-webkit-app-region:no-drag;}'
     + '.inkline-win-btns svg{width:10px;height:10px;display:block;}'
     + '.inkline-win-btns button:hover{background:color-mix(in oklab,currentColor 10%,transparent);}'
-    + '.inkline-win-btns button[data-inkline-window="close"]:hover{background:#BF352E;color:#E8EDE6;}'
+    + '.inkline-win-btns button[data-inkline-window="close"]:hover{background:#c42b1c;color:#fff;}'
     + 'html[data-inkline-fullscreen] .inkline-win-btns,html[data-inkline-fullscreen] .inkline-drag{display:none!important;}'
     + linux + mac + caption
     + '</style>'

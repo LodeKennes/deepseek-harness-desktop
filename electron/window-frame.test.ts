@@ -19,16 +19,16 @@ test('Windows uses a hidden bar with native overlay caption buttons', () => {
   const opts = windowFrameOptions('win32')
   assert.equal(opts.titleBarStyle, 'hidden')
   assert.equal(opts.titleBarOverlay?.height, 38)
-  assert.equal(opts.titleBarOverlay?.color, '#E8EDE6')
-  assert.equal(opts.titleBarOverlay?.symbolColor, '#111613')
+  assert.equal(opts.titleBarOverlay?.color, '#f9fafb')
+  assert.equal(opts.titleBarOverlay?.symbolColor, '#0f1115')
   assert.equal(opts.autoHideMenuBar, true)
 })
 
 test('Windows overlay colors follow the page scheme', () => {
   const dark = titleBarOverlayColors('dark')
-  assert.equal(dark.color, '#1C1F1A')
-  assert.equal(dark.symbolColor, '#E2E9E4')
-  assert.equal(windowFrameOptions('win32', 'dark').titleBarOverlay?.color, '#1C1F1A')
+  assert.equal(dark.color, '#1b1b1c')
+  assert.equal(dark.symbolColor, '#f9fafb')
+  assert.equal(windowFrameOptions('win32', 'dark').titleBarOverlay?.color, '#1b1b1c')
 })
 
 test('Linux hides the server bar and ships custom caption buttons', () => {

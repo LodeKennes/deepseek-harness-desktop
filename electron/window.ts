@@ -182,17 +182,14 @@ function renderShellHtml(opts: ErrorPageOptions & { restart: boolean }): string 
   <meta charset="utf-8">
   <title>${escapeHtml(opts.title)}</title>
   <style>
-    :root { color-scheme: light dark; --ink: #111613; --paper: #E8EDE6; --pen: #BF352E; }
+    :root { color-scheme: light dark; --ink: #0f1115; --paper: #f9fafb; --pen: #2563eb; }
     @media (prefers-color-scheme: dark) {
-      :root { --ink: #E2E9E4; --paper: #1C1F1A; --pen: #E55A4E; }
+      :root { --ink: #f1f5f9; --paper: #10141d; --pen: #60a5fa; }
     }
     ${uiFontFace()}
     ${windowChromePageCss()}
     body { font-family: ${UI_FONT_FAMILY}; margin: 0; padding: 48px 32px; line-height: 1.45;
-           color: var(--ink);
-           background:
-             repeating-linear-gradient(90deg, color-mix(in oklab, var(--ink) 6%, transparent) 0 1px, transparent 1px 48px),
-             var(--paper); }
+           color: var(--ink); background: var(--paper); }
     main { max-width: 720px; margin: 0 auto; }
     h1 { font-size: 1.4rem; margin: 0 0 12px; }
     p { margin: 0 0 16px; }

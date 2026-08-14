@@ -2,8 +2,8 @@ export const TITLEBAR_HEIGHT = 38
 export const TRAFFIC_LIGHT_OFFSET = { x: 16, y: 18 } as const
 export const OVERLAY_BUTTONS_WIDTH = 140
 
-export const CHROME_PAPER = { light: '#E8EDE6', dark: '#1C1F1A' } as const
-export const CHROME_INK = { light: '#111613', dark: '#E2E9E4' } as const
+export const CHROME_PAPER = { light: '#f9fafb', dark: '#1b1b1c' } as const
+export const CHROME_INK = { light: '#0f1115', dark: '#f9fafb' } as const
 
 export type ChromeScheme = 'light' | 'dark'
 
@@ -88,7 +88,7 @@ export function windowChromePageCss(platform = process.platform): string {
     .inkline-win-btns button { width: 46px; border: 0; background: transparent; color: inherit; display: grid; place-items: center; -webkit-app-region: no-drag; }
     .inkline-win-btns svg { width: 10px; height: 10px; display: block; }
     .inkline-win-btns button:hover { background: color-mix(in oklab, currentColor 10%, transparent); }
-    .inkline-win-btns button[data-inkline-window="close"]:hover { background: #BF352E; color: #E8EDE6; }
+    .inkline-win-btns button[data-inkline-window="close"]:hover { background: #c42b1c; color: #fff; }
     html[data-inkline-fullscreen] .inkline-win-btns,
     html[data-inkline-fullscreen] .inkline-drag { display: none !important; }
     ${buttons}
