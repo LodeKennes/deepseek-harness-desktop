@@ -51,7 +51,9 @@ select,
 [class*="bubble"],
 [class*="provider-mark"],
 [class*="ready-icon"],
-[class*="card"] {
+[class*="card"],
+[class*="previewBadge"],
+[class*="crumb"] {
   border-radius: 2px;
 }
 
