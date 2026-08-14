@@ -53,11 +53,18 @@ Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` 
 
 ```sh
 ./scripts/package.sh
-# Linux x64 / arm64: dist/installers/DeepSeek-Harness-<desktop.version>-linux-<arch>.{deb,AppImage}
+# Linux x64 / arm64: AppImage, deb, rpm, and pkg.tar.zst
 # macOS arm64 / x64: dist/installers/DeepSeek-Harness-<desktop.version>-mac-<arch>.{dmg,zip}
 ```
 
-electron-builder always runs with `--publish never`. Linux: `.deb` is the primary installer (SUID `chrome-sandbox`, no `--no-sandbox`); AppImage is a portable extra and is launched with `--no-sandbox`. macOS: DMG (drag to Applications) + zip; `stage-runtime.sh` copies `node-pty`'s `spawn-helper` next to the bundled Node as `node/bin/node-spawn-helper`. Host smoke of the staged sidecar: `./scripts/smoke-sidecar.sh`. After packaging, `./scripts/smoke-packaged.sh` extract-and-runs the AppImage (no `libfuse2`) and unpacks the `.deb` on Linux, or unzips the macOS zip, asserts the helper, and orphan-kills the `.app`.
+electron-builder always runs with `--publish never`. Linux: `.deb`, `.rpm`, and
+`.pkg.tar.zst` are native packages with the SUID `chrome-sandbox`; AppImage is
+a portable extra launched with `--no-sandbox`. macOS: DMG + zip;
+`stage-runtime.sh` copies `node-pty`'s `spawn-helper` next to the bundled Node as
+`node/bin/node-spawn-helper`. Host smoke of the staged sidecar:
+`./scripts/smoke-sidecar.sh`. After packaging, `./scripts/smoke-packaged.sh`
+validates all four Linux formats, launches the AppImage and unpacked `.deb`, or
+unzips the macOS zip, asserts the helper, and orphan-kills the `.app`.
 
 ## Package (Windows)
 
@@ -76,3 +83,16 @@ Host smoke of the staged sidecar (quit pipe): `./scripts/smoke-sidecar.sh`. Afte
 - Never commit `.cache/`, `dist/`, `out/`, or `node_modules/`.
 - Never treat this repo as the harness source of truth.
 - Desktop versioning is independent of the harness pin.
+
+## Automatic releases
+
+`versions.json` and `package.json` contain the `X.Y.Z` desktop base version.
+Every push to `master` runs `.github/workflows/release.yml` serially. The
+workflow finds the highest existing `desktop-vX.Y.Z-N` tag, selects `N + 1`,
+passes `X.Y.Z-N` into the complete build matrix, and creates the tag only after
+all packages and smoke tests pass. Rerunning a released commit reuses its
+existing version instead of consuming a new build number.
+
+The resulting GitHub Release contains automatically generated change history,
+all platform artifacts, and `SHA256SUMS`. Pull requests run CI and unpublished
+desktop validation builds but cannot publish releases.

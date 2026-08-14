@@ -45,7 +45,7 @@ linux:
   # Match package.json desktopName / StartupWMClass / binary.
   syncDesktopName: true
   synopsis: DeepSeek Harness desktop
-  # deb first (primary, SUID chrome-sandbox); AppImage is portable extra.
+  # Native packages plus a portable AppImage. Host-native x64/arm64 builds.
   # Host-native only: linux-x64 and linux-arm64 are separate artifacts.
   target:
     - target: deb
@@ -53,6 +53,14 @@ linux:
         - x64
         - arm64
     - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: rpm
+      arch:
+        - x64
+        - arm64
+    - target: pacman
       arch:
         - x64
         - arm64
@@ -74,6 +82,24 @@ appImage:
 deb:
   packageName: deepseek-harness
   priority: optional
+
+rpm:
+  packageName: deepseek-harness
+  compression: xz
+
+pacman:
+  packageName: deepseek-harness
+  compression: zstd
+  artifactName: DeepSeek-Harness-${version}-${os}-${arch}.pkg.tar.zst
+  depends:
+    - gtk3
+    - libnotify
+    - nss
+    - libxss
+    - libxtst
+    - xdg-utils
+    - at-spi2-core
+    - libsecret
 
 # Separate per-arch artifacts (not lipo/universal). Unsigned v1; CSC is off.
 mac:

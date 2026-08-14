@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Package the Electron shell + staged harness for the host OS/arch.
-# Linux: deb + AppImage. macOS: dmg + zip (per-arch, not lipo). Windows: nsis + zip.
+# Linux: deb + rpm + pacman + AppImage. macOS: dmg + zip. Windows: nsis + zip.
 set -euo pipefail
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -49,6 +49,13 @@ pack_os=
 pack_arch=
 builder_args=()
 artifact_glob=
+base_version=$(jq -r .desktop.version versions.json)
+package_version=${RELEASE_VERSION:-$base_version}
+
+if ! [[ "$package_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]]; then
+  echo "error: package version must be X.Y.Z or X.Y.Z-N (got '$package_version')" >&2
+  exit 1
+fi
 
 pack_arch=$(detect_pack_arch)
 
@@ -58,7 +65,7 @@ case "$(uname -s)" in
     # productName "DeepSeek Harness" installs to /opt/DeepSeek Harness/, and
     # Chromium LaunchProcess execvp-splits chrome-sandbox at the space.
     builder_args=(
-      --linux deb AppImage --"$pack_arch"
+      --linux deb rpm pacman AppImage --"$pack_arch"
       --config.productName=DeepSeek-Harness
     )
     artifact_glob="DeepSeek-Harness-*-linux-${pack_arch}.*"
@@ -147,8 +154,9 @@ pnpm exec tsc
 # Never publish from this wrapper (unsigned v1).
 export CSC_IDENTITY_AUTO_DISCOVERY=false
 
+builder_args+=("--config.extraMetadata.version=$package_version")
+
 echo "package: electron-builder ${builder_args[*]} --publish never"
 pnpm exec electron-builder "${builder_args[@]}" --publish never
 
-version=$(jq -r .desktop.version versions.json)
-echo "package: artifacts in $repo_root/dist/installers ($artifact_glob version=${version} ${pack_os}-${pack_arch})"
+echo "package: artifacts in $repo_root/dist/installers ($artifact_glob version=${package_version} ${pack_os}-${pack_arch})"

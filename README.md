@@ -18,10 +18,14 @@ End users do not need Node.js, pnpm, Python, or a C++ toolchain for the primary 
 
 | Field | Value |
 | --- | --- |
-| Desktop | `0.1.0-beta.1` (`ai.deepseek.harness.desktop`) |
+| Desktop base | `0.1.0` (`ai.deepseek.harness.desktop`) |
 | Harness | `0.1.0-rc.5` at `47f943859bef60e4160492346772ded9b24f765a` |
 
-A pin bump is a deliberate commit in this repository. This repo is not a source of truth for the harness.
+A push to `master` automatically becomes `0.1.0-N`, where `N` increments
+within that base version. The successful release workflow creates the matching
+`desktop-v0.1.0-N` tag, generated change history, checksums, and GitHub Release.
+A base-version or harness pin bump is a deliberate commit in this repository.
+This repo is not a source of truth for the harness.
 
 ## License
 

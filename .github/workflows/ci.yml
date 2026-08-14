@@ -26,6 +26,9 @@ jobs:
       - name: Shellcheck
         run: shellcheck -S warning scripts/*.sh
 
+      - name: Release version tests
+        run: ./scripts/test-next-release-version.sh
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:

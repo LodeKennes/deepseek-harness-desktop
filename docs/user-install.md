@@ -35,7 +35,9 @@ ln -s "/Applications/DeepSeek Harness.app/Contents/Resources/harness/bin/dsh" /u
 
 | Format | Role |
 | --- | --- |
-| **`.deb`** | **Primary.** No extra runtimes (Node, pnpm, Python, C++ toolchain). electron-builder installs the Chromium SUID `chrome-sandbox` helper. Prefer this. |
+| **`.deb`** | Debian, Ubuntu, Mint, and derivatives. |
+| **`.rpm`** | Fedora, RHEL, openSUSE, and other RPM-based distributions. |
+| **`.pkg.tar.zst`** | Arch Linux, Manjaro, EndeavourOS, and other pacman-based distributions. |
 | **AppImage** | Portable extra. **Not** zero-dep. Cannot ship a working SUID sandbox helper, so it is launched with `--no-sandbox`. The HTTP API is still bound to `127.0.0.1` only. |
 
 ### .deb
@@ -47,6 +49,18 @@ sudo apt install ./DeepSeek-Harness-*-linux-*.deb
 `apt install ./…` pulls the package's shared-library Depends (GTK, NSS, …). `dpkg -i` alone will not.
 
 The desktop binary is `deepseek-harness` (package name `deepseek-harness`). The bundled CLI lives inside the app tree at `resources/harness/bin/dsh`. The package does **not** install `/usr/bin/dsh` or `/usr/bin/dsh-desktop`.
+
+### Fedora / RPM
+
+```sh
+sudo dnf install ./DeepSeek-Harness-*.rpm
+```
+
+### Arch Linux / pacman
+
+```sh
+sudo pacman -U ./DeepSeek-Harness-*.pkg.tar.zst
+```
 
 ### AppImage
 
@@ -81,4 +95,7 @@ The shipped profile is the `web` template only. `dsh plugin` is an advanced path
 
 ## Updates
 
-v1 has **no auto-update**. Download a newer GitHub Release by hand when one is published. Signing (and only then auto-update) is a follow-up; see [signing.md](signing.md).
+There is **no in-app auto-update**. Every successful push to `master` publishes
+the next `desktop-vX.Y.Z-N` GitHub Release automatically; download newer builds
+from the Releases page. Signing (and only then in-app auto-update) is a
+follow-up; see [signing.md](signing.md).

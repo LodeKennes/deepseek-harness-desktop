@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Packaged smoke: Linux AppImage/.deb, or macOS DMG/zip + spawn-helper.
+# Packaged smoke: Linux AppImage/deb/rpm/pacman, or macOS DMG/zip.
 # Orphan: kill Electron after ready; sidecar must die within 2s.
 set -euo pipefail
 
@@ -202,13 +202,17 @@ case "$(uname -s)" in
 esac
 
 need_cmd dpkg-deb
+need_cmd rpm
+need_cmd bsdtar
 # Never apt-get install libfuse2. AppImage smoke uses extract-and-run.
 
 appimage=$(find "$out_dir" -maxdepth 1 -type f -name '*.AppImage' -print -quit || true)
 deb=$(find "$out_dir" -maxdepth 1 -type f -name '*.deb' -print -quit || true)
+rpm_package=$(find "$out_dir" -maxdepth 1 -type f -name '*.rpm' -print -quit || true)
+pacman_package=$(find "$out_dir" -maxdepth 1 -type f -name '*.pkg.tar.zst' -print -quit || true)
 
-if [ -z "$appimage" ] || [ -z "$deb" ]; then
-  echo "error: expected .deb and .AppImage in $out_dir" >&2
+if [ -z "$appimage" ] || [ -z "$deb" ] || [ -z "$rpm_package" ] || [ -z "$pacman_package" ]; then
+  echo "error: expected .deb, .rpm, .pkg.tar.zst, and .AppImage in $out_dir" >&2
   ls -la "$out_dir" >&2 || true
   exit 1
 fi
@@ -230,6 +234,8 @@ trap cleanup EXIT
 
 echo "smoke-packaged: appimage=$appimage"
 echo "smoke-packaged: deb=$deb"
+echo "smoke-packaged: rpm=$rpm_package"
+echo "smoke-packaged: pacman=$pacman_package"
 
 # --- static: AppImage Exec includes --no-sandbox (no FUSE) ---
 mkdir -p "$workdir/appimage"
@@ -276,6 +282,28 @@ if [ -z "$sandbox" ]; then
   exit 1
 fi
 echo "smoke-packaged: .deb desktop has no --no-sandbox; chrome-sandbox present"
+
+# --- static: Fedora RPM and Arch package contain the staged runtime ---
+rpm -qpl "$rpm_package" > "$workdir/rpm-files.txt"
+if ! grep -q '/resources/harness/sidecar-entry.mjs$' "$workdir/rpm-files.txt"; then
+  echo "error: RPM missing extraResources harness/sidecar-entry.mjs" >&2
+  exit 1
+fi
+if ! grep -q '/chrome-sandbox$' "$workdir/rpm-files.txt"; then
+  echo "error: RPM missing chrome-sandbox helper" >&2
+  exit 1
+fi
+
+bsdtar -tf "$pacman_package" > "$workdir/pacman-files.txt"
+if ! grep -q '/resources/harness/sidecar-entry.mjs$' "$workdir/pacman-files.txt"; then
+  echo "error: pacman package missing extraResources harness/sidecar-entry.mjs" >&2
+  exit 1
+fi
+if ! grep -q '/chrome-sandbox$' "$workdir/pacman-files.txt"; then
+  echo "error: pacman package missing chrome-sandbox helper" >&2
+  exit 1
+fi
+echo "smoke-packaged: RPM and pacman packages contain staged harness and chrome-sandbox"
 
 # --- launch AppImage without FUSE; orphan after ready ---
 need_cmd xvfb-run

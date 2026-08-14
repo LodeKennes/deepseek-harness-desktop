@@ -1,14 +1,21 @@
 name: Build desktop
 
-# workflow_call: release.yml rebuilds this matrix on desktop-v* tags.
-# Tags are not a standalone trigger so a tag push does not build twice.
+# Pull requests get an unpublished validation build. release.yml calls this
+# workflow with an immutable X.Y.Z-N version for each push to master.
 on:
   pull_request:
-  push:
-    branches:
-      - master
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: Optional X.Y.Z-N artifact version for a manual build
+        required: false
+        type: string
   workflow_call:
+    inputs:
+      release_version:
+        description: X.Y.Z-N artifact version selected by release.yml
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -16,13 +23,14 @@ permissions:
 
 concurrency:
   group: build-desktop-${{ github.ref }}
-  # Cancel superseded pushes/PRs on the same ref. Tag/release calls use a
-  # different ref (refs/tags/desktop-v*) so they are not cancelled.
+  # Pull request/manual builds may be superseded. Master release runs are
+  # serialized by release.yml before this reusable workflow is called.
   cancel-in-progress: true
 
 env:
   DSH_TELEMETRY_DISABLED: "1"
   CSC_IDENTITY_AUTO_DISCOVERY: "false"
+  RELEASE_VERSION: ${{ inputs.release_version || '' }}
 
 jobs:
   linux-x64:
@@ -47,8 +55,8 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Install musl-tools
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Install Linux packaging tools
+        run: sudo apt-get update && sudo apt-get install -y libarchive-tools musl-tools rpm zstd
 
       # install + build + manylinux pty.node happen inside stage-runtime.sh
       - name: Stage runtime
@@ -64,7 +72,7 @@ jobs:
         run: ./scripts/package.sh
 
       - name: Install xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+        run: sudo apt-get update && sudo apt-get install -y xauth xvfb
         # Do not install libfuse2. AppImage smoke uses --appimage-extract-and-run.
 
       - name: Packaged smoke
@@ -72,7 +80,7 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=$(jq -r .desktop.version versions.json)" >> "$GITHUB_OUTPUT"
+        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
@@ -81,6 +89,8 @@ jobs:
           path: |
             dist/installers/DeepSeek-Harness-*-linux-amd64.deb
             dist/installers/DeepSeek-Harness-*-linux-x86_64.AppImage
+            dist/installers/DeepSeek-Harness-*-linux-*.rpm
+            dist/installers/DeepSeek-Harness-*-linux-*.pkg.tar.zst
           if-no-files-found: error
           retention-days: 14
 
@@ -124,7 +134,7 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=$(jq -r .desktop.version versions.json)" >> "$GITHUB_OUTPUT"
+        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
@@ -199,7 +209,7 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=$(jq -r .desktop.version versions.json)" >> "$GITHUB_OUTPUT"
+        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
@@ -233,8 +243,8 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Install musl-tools
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Install Linux packaging tools
+        run: sudo apt-get update && sudo apt-get install -y libarchive-tools musl-tools rpm zstd
 
       # install + build + manylinux aarch64 pty.node happen inside stage-runtime.sh
       - name: Stage runtime
@@ -250,7 +260,7 @@ jobs:
         run: ./scripts/package.sh
 
       - name: Install xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+        run: sudo apt-get update && sudo apt-get install -y xauth xvfb
         # Do not install libfuse2. AppImage smoke uses --appimage-extract-and-run.
 
       - name: Packaged smoke
@@ -258,7 +268,7 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=$(jq -r .desktop.version versions.json)" >> "$GITHUB_OUTPUT"
+        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
@@ -267,6 +277,8 @@ jobs:
           path: |
             dist/installers/DeepSeek-Harness-*-linux-arm64.deb
             dist/installers/DeepSeek-Harness-*-linux-arm64.AppImage
+            dist/installers/DeepSeek-Harness-*-linux-*.rpm
+            dist/installers/DeepSeek-Harness-*-linux-*.pkg.tar.zst
           if-no-files-found: error
           retention-days: 14
 
@@ -312,7 +324,7 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=$(jq -r .desktop.version versions.json)" >> "$GITHUB_OUTPUT"
+        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
@@ -390,7 +402,7 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=$(jq -r .desktop.version versions.json)" >> "$GITHUB_OUTPUT"
+        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
