@@ -33,6 +33,8 @@ HTTPS is the default. Use SSH only as a fallback.
 
 `scripts/apply-styling.mjs generate` writes `.cache/styling/` (overlay, `desktop-brand` plugin, `brand.generated.cordis.yml`). `apply` (from `build-harness.sh`) hard-resets `.cache/harness`, copies overlay files, and patches the `AppRoot` `HARNESS` needle. Missing markers fail the build.
 
+`resources/desktop-capabilities.cordis.yml` is a second `--patch` (after brand). It turns on durable session full-text search (`session-query-sqlite` `openAt: first-search`) so the sidebar search matches conversation content, not only titles.
+
 Do not overlay `AppRoot.tsx` as a whole file. Do not rewrite hashed Vite `index-*.js`. Do not inject Electron preload JS into the sidecar.
 
 ## Fetch and build

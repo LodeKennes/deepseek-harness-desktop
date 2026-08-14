@@ -189,7 +189,10 @@ function renderShellHtml(opts: ErrorPageOptions & { restart: boolean }): string 
     ${uiFontFace()}
     ${windowChromePageCss()}
     body { font-family: ${UI_FONT_FAMILY}; margin: 0; padding: 48px 32px; line-height: 1.45;
-           color: var(--ink); background: var(--paper); }
+           color: var(--ink);
+           background:
+             repeating-linear-gradient(90deg, color-mix(in oklab, var(--ink) 6%, transparent) 0 1px, transparent 1px 48px),
+             var(--paper); }
     main { max-width: 720px; margin: 0 auto; }
     h1 { font-size: 1.4rem; margin: 0 0 12px; }
     p { margin: 0 0 16px; }

@@ -53,6 +53,7 @@ test('repo styling.json is a non-DeepSeek brand loaded through the shipped parse
   const chrome = readFileSync(join(repoRoot, 'styling', 'chrome.css'), 'utf8')
   assert.match(chrome, /font-family: "Inter"/)
   assert.match(chrome, /repeating-linear-gradient/)
+  assert.match(chrome, /--dsw-shadow-lv2: none/)
   assert.doesNotMatch(chrome, /Archivo/)
 })
 
