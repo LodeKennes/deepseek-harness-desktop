@@ -14,24 +14,19 @@ to moderate a first submission.
 | **GitHub Releases** | download the asset | already automated |
 | **Homebrew Cask** | `brew tap LodeKennes/deepseek-harness-desktop https://github.com/LodeKennes/deepseek-harness-desktop && brew install --cask deepseek-harness` | live as soon as `Casks/` is on `master` |
 | **Scoop** | `scoop bucket add deepseek-harness https://github.com/LodeKennes/deepseek-harness-desktop && scoop install deepseek-harness` | live as soon as `bucket/` is on `master` |
-| **WinGet** | `winget install LodeKennes.DeepSeekHarness` | open a PR to [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs) from `packaging/winget/` (or set `WINGET_TOKEN`) |
-| **Chocolatey** | `choco install deepseek-harness` | create a [community account](https://community.chocolatey.org), then `choco push` or set `CHOCOLATEY_API_KEY` |
+| **WinGet** | `winget install LodeKennes.DeepSeekHarness` | manual PR to [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs) from `packaging/winget/` (auto-submit is off) |
+| **Chocolatey** | `choco install deepseek-harness` | create a [community account](https://community.chocolatey.org), then `choco push` (auto-push is off) |
 | **AUR** | `yay -S deepseek-harness-desktop-bin` | create an AUR account and push `packaging/aur/deepseek-harness-desktop-bin` |
 | **apt / dnf / pacman** | install the Release `.deb` / `.rpm` / `.pkg.tar.zst` | no Launchpad / COPR / official-repo project yet |
 
 Do **not** submit this app to the Mac App Store or Microsoft Store until
 code signing exists. See [docs/signing.md](../docs/signing.md).
 
-## Secrets (optional)
+## Gallery submit is off
 
-Store these as GitHub Actions repository secrets. The release workflow
-skips a gallery when its secret is absent.
-
-| Secret | Purpose |
-| --- | --- |
-| `WINGET_TOKEN` | PAT that can push to your fork of `microsoft/winget-pkgs` |
-| `CHOCOLATEY_API_KEY` | Chocolatey community API key |
-| `AUR_SSH_PRIVATE_KEY` | Deploy key that can push to `ssh://aur@aur.archlinux.org/deepseek-harness-desktop-bin.git` |
+The release workflow only refreshes the in-repo indexes. It does **not**
+push to WinGet, Chocolatey, or AUR (job-level `secrets.*` `if` is invalid
+in this workflow file). First-time gallery listings stay manual.
 
 ## Manual first-time publishes
 
