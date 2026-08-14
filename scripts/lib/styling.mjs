@@ -355,7 +355,7 @@ const LINUX_WINDOW_BUTTONS = '<div class="inkline-win-btns" role="toolbar" aria-
 
 function windowChromeCss() {
   const mac = process.platform === 'darwin'
-    ? '[class*="logoRow"]{padding-left:72px;}[data-sidebar-collapsed] [class*="logoRow"]{padding-left:0;}[data-sidebar-collapsed] [class*="sidebarCol"]{padding-top:22px;}'
+    ? '[class*="logoRow"]{padding-left:80px!important;}[data-sidebar-collapsed] [class*="logoRow"]{padding-left:0!important;}[data-sidebar-collapsed] [class*="sidebarCol"]{padding-top:38px!important;}'
     : ''
   const caption = process.platform === 'win32' || process.platform === 'linux'
     ? '.inkline-drag{right:140px;}[class*="titleRow"]{padding-right:140px;}'

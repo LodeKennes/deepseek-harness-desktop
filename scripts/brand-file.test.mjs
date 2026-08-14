@@ -74,6 +74,12 @@ test('packaged smokes look up binaries from styling.json, not DeepSeek names', (
   assert.doesNotMatch(windows, /DeepSeek Harness/)
 })
 
+test('packaged smoke cleanup can delete a read-only AppImage extract tree', () => {
+  const smoke = readFileSync(join(repoRoot, 'scripts', 'smoke-packaged.sh'), 'utf8')
+  assert.match(smoke, /chmod -R u\+w "\$workdir"/)
+  assert.match(smoke, /set \+e/)
+})
+
 test('desktop capabilities patch is packaged and applied after brand', () => {
   const yml = readFileSync(join(repoRoot, 'electron-builder.yml'), 'utf8')
   assert.match(yml, /from: resources\/desktop-capabilities\.cordis.yml/)

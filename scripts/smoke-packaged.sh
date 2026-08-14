@@ -63,12 +63,15 @@ smoke_packaged_mac() {
   # Invoked via trap EXIT; shellcheck cannot see that (SC2317/SC2329).
   # shellcheck disable=SC2317,SC2329
   cleanup_mac() {
+    set +e
     if [ -n "${wrapper_pid:-}" ] && kill -0 "$wrapper_pid" 2>/dev/null; then
       kill -9 "$wrapper_pid" 2>/dev/null || true
       wait "$wrapper_pid" 2>/dev/null || true
     fi
     pkill -9 -f "$workdir" 2>/dev/null || true
-    rm -rf "$workdir"
+    # AppImage/zip extract trees are often mode 555; do not fail the smoke on leftover files.
+    chmod -R u+w "$workdir" 2>/dev/null || true
+    rm -rf "$workdir" 2>/dev/null || true
   }
   trap cleanup_mac EXIT
 
@@ -232,12 +235,16 @@ workdir=$(mktemp -d)
 wrapper_pid=
 
 cleanup() {
+  set +e
   if [ -n "${wrapper_pid:-}" ] && kill -0 "$wrapper_pid" 2>/dev/null; then
     kill -9 "$wrapper_pid" 2>/dev/null || true
     wait "$wrapper_pid" 2>/dev/null || true
   fi
   pkill -9 -f "$workdir" 2>/dev/null || true
-  rm -rf "$workdir"
+  # AppImage --appimage-extract writes 555 squashfs-root dirs. rm -rf then
+  # errors "Directory not empty" and fails a green smoke under `set -e`.
+  chmod -R u+w "$workdir" 2>/dev/null || true
+  rm -rf "$workdir" 2>/dev/null || true
 }
 trap cleanup EXIT
 
