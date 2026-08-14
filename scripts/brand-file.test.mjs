@@ -83,6 +83,12 @@ test('desktop capabilities patch is packaged and applied after brand', () => {
   assert.match(smoke, /desktop-capabilities\.cordis.yml/)
 })
 
+test('repo license points at the Inter OFL', () => {
+  const license = readFileSync(join(repoRoot, 'LICENSE'), 'utf8')
+  assert.match(license, /Inter/)
+  assert.match(license, /styling\/fonts\/inter-OFL\.txt/)
+})
+
 test('desktop workflow uploads artifacts using styling.json productNameSafe', () => {
   const yml = readFileSync(join(repoRoot, '.github/workflows/build-desktop.yml'), 'utf8')
   assert.match(yml, /prefix=\$\(jq -r \.productNameSafe styling\.json\)/)
