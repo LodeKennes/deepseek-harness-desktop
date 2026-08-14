@@ -9,6 +9,7 @@ This repository is a thin packaging repo. It never vendors `deepseek-ai/deepseek
 - `harness.sha` is required. That is the revision that is cloned and checked out.
 - `harness.repository` is the default HTTPS remote (`https://github.com/deepseek-ai/deepseek-harness.git`).
 - `harness.sshRepository` is the SSH fallback (`git@github.com:deepseek-ai/deepseek-harness.git`) when HTTPS cannot be used.
+- `runtimes.cliProxyApi` is the CLIProxyAPI release bundled with the desktop app.
 
 HTTPS is the default. Use SSH only as a fallback.
 
@@ -42,14 +43,19 @@ HARNESS_CLONE_SSH=1 ./scripts/fetch-harness.sh
 
 ```sh
 ./scripts/stage-runtime.sh
+./scripts/stage-cliproxyapi.sh
 # host smoke: node dist/runtime/sidecar-entry.mjs web --host 127.0.0.1 --port 13800
 ```
 
 `STAGE` defaults to `dist/runtime`. The script deploys the existing `@deepseek-ai/dsh` package (no injected workspace member), materializes links, restores missing direct deps, downloads official Node, and copies `electron/sidecar-entry.mjs`.
 
+`stage-cliproxyapi.sh` downloads the host OS/architecture asset for the pinned
+CLIProxyAPI release, verifies it against the upstream checksum manifest, and
+stages its binary and license under `dist/cliproxyapi`.
+
 ## Package (Linux / macOS)
 
-Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` when it is missing), plus `pnpm install` in this repo. `STAGE` is not supported here: electron-builder `extraResources` is always `dist/runtime`. Unset `STAGE` or set it to that path. The host OS/arch must match the target (no cross-compile; two macOS DMGs, not `lipo`).
+Requires a staged `dist/runtime` (`scripts/package.sh` calls `stage-runtime.sh` when it is missing), plus `pnpm install` in this repo. Packaging stages the pinned CLIProxyAPI binary automatically. `STAGE` is not supported here: electron-builder `extraResources` is always `dist/runtime`. Unset `STAGE` or set it to that path. The host OS/arch must match the target (no cross-compile; two macOS DMGs, not `lipo`).
 
 ```sh
 ./scripts/package.sh

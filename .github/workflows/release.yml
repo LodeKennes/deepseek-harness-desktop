@@ -27,6 +27,7 @@ jobs:
       existing: ${{ steps.release.outputs.existing }}
       harness_sha: ${{ steps.release.outputs.harness_sha }}
       harness_version: ${{ steps.release.outputs.harness_version }}
+      cliproxyapi_version: ${{ steps.release.outputs.cliproxyapi_version }}
     steps:
       - name: Checkout complete tag history
         uses: actions/checkout@v7
@@ -47,6 +48,7 @@ jobs:
           package_version=$(jq -r .version package.json)
           harness_sha=$(jq -r .harness.sha versions.json)
           harness_version=$(jq -r .harness.version versions.json)
+          cliproxyapi_version=$(jq -r .runtimes.cliProxyApi versions.json)
 
           if [ "$base_version" != "$package_version" ]; then
             echo "error: versions.json desktop.version ($base_version) does not match package.json ($package_version)" >&2
@@ -63,6 +65,7 @@ jobs:
           {
             echo "harness_sha=$harness_sha"
             echo "harness_version=$harness_version"
+            echo "cliproxyapi_version=$cliproxyapi_version"
           } >> "$GITHUB_OUTPUT"
 
   build:
@@ -109,6 +112,7 @@ jobs:
           TARGET_SHA: ${{ github.sha }}
           HARNESS_SHA: ${{ needs.version.outputs.harness_sha }}
           HARNESS_VERSION: ${{ needs.version.outputs.harness_version }}
+          CLIPROXYAPI_VERSION: ${{ needs.version.outputs.cliproxyapi_version }}
         run: |
           set -euo pipefail
 
@@ -130,6 +134,7 @@ jobs:
           | Commit | \`${TARGET_SHA}\` |
           | Harness | \`${HARNESS_VERSION}\` |
           | Harness SHA | \`${HARNESS_SHA}\` |
+          | CLIProxyAPI | \`${CLIPROXYAPI_VERSION}\` |
 
           Artifacts were rebuilt and smoke-tested for this commit before the tag and release were created.
           EOF

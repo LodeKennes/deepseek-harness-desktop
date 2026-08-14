@@ -34,9 +34,14 @@ The product is a thin Electron shell plus a **bundled official Node 24 sidecar**
 
 - `Contents/Resources/harness/node/bin/node`
 - `Contents/Resources/harness/node/bin/node-spawn-helper` (node-pty)
+- `Contents/Resources/cliproxyapi/cli-proxy-api`
 - every native `.node` under `Contents/Resources/harness/` (koffi, node-pty, `node-addon-require-builtin-*`, …)
 
 The sidecar may need `com.apple.security.cs.allow-unsigned-executable-memory` (koffi / V8). That entitlement belongs on the **sidecar Node**, not on Electron. Budget time to walk the nested binaries; notarization fails if any remain unsigned.
+
+On Windows, sign both the Electron executable/installer and the bundled
+`resources\cliproxyapi\cli-proxy-api.exe` before packaging the final NSIS
+installer.
 
 ## Auto-update
 

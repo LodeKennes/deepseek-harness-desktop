@@ -1,7 +1,7 @@
 # Design
 
 ## Source of truth
-- Status: Active demo
+- Status: Implemented
 - Last refreshed: 2026-08-14
 - Primary product surfaces: desktop first-run subscription setup, connection management, and the embedded DeepSeek Harness web application.
 - Evidence reviewed: the desktop shell, packaged-runtime layout, and CLIProxyAPI v7.2.74 management API and release artifacts.
@@ -29,7 +29,7 @@
 ## Design principles
 - Explain the outcome before the mechanism: users choose an account provider, not a proxy implementation.
 - Progressive disclosure: keep OAuth, routing, ports, and process supervision behind clear status language.
-- Tradeoffs: this branch favors one pinned, local sidecar and its existing API over a new authentication or routing layer.
+- Tradeoffs: the implementation favors one pinned, local sidecar and its existing API over a new authentication or routing layer.
 
 ## Visual language
 - Color: neutral slate surfaces with a blue primary action, green success, amber progress, and system light/dark adaptation.
@@ -43,10 +43,10 @@
 - Existing components to reuse: the secured `BrowserWindow`, data-URL shell rendering, reserved `.invalid` navigation actions, and the application menu.
 - New/changed components: onboarding hero, provider connection card, status badge, discovered-model summary, privacy note, and primary/secondary actions.
 - Variants and states: disconnected, connecting, connected, skipped/continue, and the existing Harness start error state.
-- Token/component ownership: demo CSS variables and markup live in `electron/subscription-demo.ts`; no new design-system layer is introduced.
+- Token/component ownership: subscription CSS variables and markup live in `electron/subscription-demo.ts`; no new design-system layer is introduced.
 
 ## Accessibility
-- Target standard: WCAG 2.2 AA where applicable to the prototype.
+- Target standard: WCAG 2.2 AA where applicable to the desktop onboarding flow.
 - Keyboard/focus behavior: native anchors provide tab/Enter operation; focus rings remain clearly visible.
 - Contrast/readability: text and status colors have high-contrast light/dark variants; color is always paired with text.
 - Screen-reader semantics: semantic headings, lists, navigation landmarks, status text, and descriptive action labels.

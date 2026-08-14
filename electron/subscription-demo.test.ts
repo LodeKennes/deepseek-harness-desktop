@@ -44,7 +44,7 @@ test('updates one provider without mutating the previous state', () => {
   assert.equal(connected.statuses.codex, 'disconnected')
 })
 
-test('renders explicit demo, security, keyboard, and connected-state cues', () => {
+test('renders connector, security, keyboard, and connected-state cues', () => {
   const connected = setSubscriptionProviderState(createSubscriptionDemoState(), 'codex', {
     status: 'connected',
     account: 'user@example.com',
@@ -52,7 +52,7 @@ test('renders explicit demo, security, keyboard, and connected-state cues', () =
   })
   const html = renderSubscriptionDemo(connected)
 
-  assert.match(html, /Functional demo/)
+  assert.match(html, /Local connector/)
   assert.match(html, /system browser handles provider sign-in/)
   assert.match(html, /Content-Security-Policy/)
   assert.match(html, /Credentials stay on this device/)

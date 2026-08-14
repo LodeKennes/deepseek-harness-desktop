@@ -2,9 +2,18 @@
 
 **Unsigned developer-preview builds.** These artifacts are not code-signed or notarized. Windows SmartScreen and macOS Gatekeeper will warn; Linux packages have no signature. Treat the OS trust UI as correct. There is no auto-update.
 
-Download installers from this repository's GitHub Releases when they are published (`desktop-v*` tags). End users do **not** need Node.js, pnpm, Python, or a C++ toolchain for the primary installers. Installed size is on the order of **0.5 GB** (compressed downloads ~180–260 MB).
+Download installers from the [latest GitHub Release](https://github.com/LodeKennes/deepseek-harness-desktop/releases/latest) (`desktop-v*` tags). End users do **not** need Node.js, pnpm, Python, or a C++ toolchain for the primary installers. Installed size is on the order of **0.5 GB** (compressed downloads ~180–260 MB).
 
-Configure a model key in **Settings → Models** after first launch (stored in `~/.dsh/.credentials.yaml`). Then **Choose workspace** in the UI.
+On first launch, connect an eligible ChatGPT/Codex, Claude, or Google
+Antigravity account in your system browser. The app discovers its models and
+configures Harness automatically. You can skip this screen and instead add a
+regular API provider later under **Settings → Models**. Then **Choose
+workspace** in the UI.
+
+The bundled CLIProxyAPI listens on localhost only. Its account files live under
+`~/.dsh/desktop/cliproxyapi/auth` (or the equivalent `%USERPROFILE%\.dsh` path
+on Windows). Remove an account through **Subscriptions → Manage
+subscriptions…** in the desktop menu.
 
 ## Windows
 
@@ -77,7 +86,7 @@ Zenity or KDialog is optional: without them, the in-page browse picker is used.
 
 ## Shared home and default workspace
 
-Desktop and CLI share the same Harness home (`~/.dsh` / `%USERPROFILE%\.dsh`, or `$DSH_HOME`). Credentials, settings, and sessions carry across.
+Desktop and CLI share the same Harness home (`~/.dsh` / `%USERPROFILE%\.dsh`, or `$DSH_HOME`). Settings and sessions carry across. Subscription account files are managed by the desktop's bundled CLIProxyAPI under the `desktop/cliproxyapi/auth` subdirectory.
 
 **Do not run CLI `dsh` and the desktop app at the same time.** Each boot heals `$DSH_HOME/profiles/node_modules` junctions/symlinks to *its* install. Last boot wins. Running both concurrently can leave plugins pointing at the wrong tree.
 

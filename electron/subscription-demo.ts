@@ -278,7 +278,7 @@ export function renderSubscriptionDemo(state: SubscriptionDemoState): string {
   <div class="shell">
     <header class="topbar">
       <div class="brand"><span class="brand-mark" aria-hidden="true">D</span>DeepSeek Harness</div>
-      <span class="demo-badge">Functional demo</span>
+      <span class="demo-badge">Local connector</span>
     </header>
     <main>
       <section class="intro" aria-labelledby="page-title">

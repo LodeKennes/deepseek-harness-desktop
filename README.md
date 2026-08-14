@@ -4,10 +4,12 @@
 
 Thin standalone packaging repository for **DeepSeek Harness** desktop installers.
 
-## Subscription onboarding demo
+**[Download the latest release](https://github.com/LodeKennes/deepseek-harness-desktop/releases/latest)** — installers are available for Windows, macOS, Debian/Ubuntu, Fedora/RPM, Arch/pacman, and AppImage.
 
-The `demo/subscription-onboarding` branch is a working, intentionally small
-integration with [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
+## Connect your subscriptions
+
+The desktop app includes a small integration with
+[CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
 The app starts a bundled local proxy, opens the provider's real browser sign-in,
 discovers the available models, and configures Harness to use them. It supports
 ChatGPT/Codex, Claude, and Google Antigravity accounts.
@@ -18,9 +20,9 @@ The connection screen can be reopened from
 **Subscriptions → Manage subscriptions…**.
 
 For a source checkout, run `./scripts/stage-runtime.sh`,
-`./scripts/stage-cliproxyapi.sh`, and then `pnpm start`. Packaged demo builds
-already contain both runtimes. See [`DESIGN.md`](DESIGN.md) for the deliberately
-limited scope and remaining production questions.
+`./scripts/stage-cliproxyapi.sh`, and then `pnpm start`. Packaged builds already
+contain both runtimes. You can also skip subscription setup and configure a
+regular API provider later in Harness settings.
 
 This repo does **not** contain the harness source, a git submodule, or vendored packages. CI (and local development) clones a pinned revision of [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness) and builds installers from that SHA. The pin lives in [`versions.json`](versions.json).
 
