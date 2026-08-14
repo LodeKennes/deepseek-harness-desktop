@@ -38,6 +38,10 @@ extraResources:
     to: cliproxyapi
     filter:
       - "**/*"
+  - from: .cache/styling/brand.generated.cordis.yml
+    to: brand.cordis.yml
+  - from: styling.json
+    to: styling.json
 afterPack: scripts/after-pack.cjs
 
 linux:

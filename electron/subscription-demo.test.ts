@@ -57,8 +57,15 @@ test('renders connector, security, keyboard, and connected-state cues', () => {
   assert.match(html, /Content-Security-Policy/)
   assert.match(html, /Credentials stay on this device/)
   assert.match(html, /Continue to Harness/)
+  assert.match(html, /DeepSeek Harness/)
   assert.match(html, /Disconnect ChatGPT \/ Codex/)
   assert.match(html, /user@example\.com/)
   assert.match(html, /gpt-example-one/)
   assert.match(html, /:focus-visible/)
+})
+
+test('renders a custom product name from styling', () => {
+  const html = renderSubscriptionDemo(createSubscriptionDemoState(), 'Acme Harness')
+  assert.match(html, />Acme Harness</)
+  assert.doesNotMatch(html, />DeepSeek Harness</)
 })

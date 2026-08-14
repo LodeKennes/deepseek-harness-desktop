@@ -16,9 +16,14 @@ need_cmd() {
 
 need_cmd jq
 need_cmd pnpm
+need_cmd node
 
 if [ ! -f versions.json ]; then
   echo "error: versions.json not found in $repo_root" >&2
+  exit 1
+fi
+if [ ! -f styling.json ]; then
+  echo "error: styling.json not found in $repo_root" >&2
   exit 1
 fi
 
@@ -51,6 +56,18 @@ builder_args=()
 artifact_glob=
 base_version=$(jq -r .desktop.version versions.json)
 package_version=${RELEASE_VERSION:-$base_version}
+product_name=$(jq -r .productName styling.json)
+product_name_safe=$(jq -r .productNameSafe styling.json)
+desktop_name=$(jq -r .desktopName styling.json)
+app_id=$(jq -r .appId styling.json)
+if [ -z "$product_name" ] || [ "$product_name" = "null" ]; then
+  echo "error: styling.json is missing productName" >&2
+  exit 1
+fi
+if [ -z "$product_name_safe" ] || [ "$product_name_safe" = "null" ] || [[ "$product_name_safe" == *[[:space:]]* ]]; then
+  echo "error: styling.json productNameSafe must be a non-empty string without spaces" >&2
+  exit 1
+fi
 
 if ! [[ "$package_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]]; then
   echo "error: package version must be X.Y.Z or X.Y.Z-N (got '$package_version')" >&2
@@ -66,19 +83,19 @@ case "$(uname -s)" in
     # Chromium LaunchProcess execvp-splits chrome-sandbox at the space.
     builder_args=(
       --linux deb rpm pacman AppImage --"$pack_arch"
-      --config.productName=DeepSeek-Harness
+      --config.productName="$product_name_safe"
     )
-    artifact_glob="DeepSeek-Harness-*-linux-${pack_arch}.*"
+    artifact_glob="${product_name_safe}-*-linux-${pack_arch}.*"
     ;;
   Darwin*)
     pack_os=mac
     builder_args=(--mac dmg zip --"$pack_arch")
-    artifact_glob="DeepSeek-Harness-*-mac-${pack_arch}.*"
+    artifact_glob="${product_name_safe}-*-mac-${pack_arch}.*"
     ;;
   MINGW*|MSYS*|CYGWIN*|Windows_NT)
     pack_os=win
     builder_args=(--win nsis zip --"$pack_arch")
-    artifact_glob="DeepSeek-Harness-*-win-${pack_arch}.*"
+    artifact_glob="${product_name_safe}-*-win-${pack_arch}.*"
     ;;
   *)
     echo "error: scripts/package.sh supports Linux, macOS, and Windows only (got $(uname -s))" >&2
@@ -149,6 +166,7 @@ if [ ! -e node_modules/.bin/electron-builder ] && [ ! -e node_modules/.bin/elect
 fi
 
 "$script_dir/stage-cliproxyapi.sh"
+node "$script_dir/apply-styling.mjs" generate
 
 echo "package: compiling Electron shell"
 pnpm exec tsc
@@ -156,7 +174,17 @@ pnpm exec tsc
 # Never publish from this wrapper (unsigned v1).
 export CSC_IDENTITY_AUTO_DISCOVERY=false
 
-builder_args+=("--config.extraMetadata.version=$package_version")
+builder_args+=(
+  "--config.extraMetadata.version=$package_version"
+  "--config.appId=$app_id"
+  "--config.artifactName=${product_name_safe}-\${version}-\${os}-\${arch}.\${ext}"
+)
+if [ "$pack_os" != linux ]; then
+  builder_args+=("--config.productName=$product_name")
+fi
+if [ -n "$desktop_name" ] && [ "$desktop_name" != "null" ]; then
+  builder_args+=("--config.linux.executableName=$desktop_name")
+fi
 
 echo "package: electron-builder ${builder_args[*]} --publish never"
 pnpm exec electron-builder "${builder_args[@]}" --publish never

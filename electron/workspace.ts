@@ -1,7 +1,9 @@
+import { existsSync } from 'node:fs'
 import { access, mkdir, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { app } from 'electron'
+import { loadDesktopStyling } from './brand.js'
 import { pickDefaultWorkspace } from './workspace-pick.js'
 
 export { pickDefaultWorkspace } from './workspace-pick.js'
@@ -9,9 +11,11 @@ export { pickDefaultWorkspace } from './workspace-pick.js'
 const DSH_HOME_DIR_NAME = '.dsh'
 const DSH_HOME_ENV = 'DSH_HOME'
 
-const WORKSPACE_README = `This folder is the default workspace for DeepSeek Harness Desktop.
+function workspaceReadme(productName: string): string {
+  return `This folder is the default workspace for ${productName} Desktop.
 The agent uses it as the sandbox default until you choose a workspace in the UI.
 `
+}
 
 export function expandHomePath(path: string): string {
   if (path === '~') return homedir()
@@ -44,7 +48,10 @@ function readDocumentsPath(): string | undefined {
 }
 
 export function resolveDefaultWorkspace(): string {
-  return pickDefaultWorkspace(homedir(), resolveDshHome(), readDocumentsPath())
+  return pickDefaultWorkspace(homedir(), resolveDshHome(), readDocumentsPath(), {
+    productName: loadDesktopStyling().productName,
+    exists: existsSync,
+  })
 }
 
 export async function ensureDefaultWorkspace(dir: string): Promise<string> {
@@ -53,7 +60,7 @@ export async function ensureDefaultWorkspace(dir: string): Promise<string> {
   try {
     await access(readme)
   } catch {
-    await writeFile(readme, WORKSPACE_README, 'utf8')
+    await writeFile(readme, workspaceReadme(loadDesktopStyling().productName), 'utf8')
   }
   return dir
 }

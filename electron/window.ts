@@ -24,10 +24,10 @@ export interface ErrorPageOptions {
   stderr?: readonly string[]
 }
 
-export function createMainWindow(hooks: MainWindowHooks): BrowserWindow {
+export function createMainWindow(hooks: MainWindowHooks, productName: string): BrowserWindow {
   const preload = fileURLToPath(new URL('./preload.js', import.meta.url))
   const win = new BrowserWindow({
-    title: 'DeepSeek Harness',
+    title: productName,
     width: 1280,
     height: 800,
     minWidth: 800,
@@ -70,9 +70,13 @@ export function showErrorPage(win: BrowserWindow, opts: ErrorPageOptions): void 
   void win.loadURL(toDataUrl(renderShellHtml({ ...opts, restart: true })))
 }
 
-export function showSubscriptionDemo(win: BrowserWindow, state: SubscriptionDemoState): void {
+export function showSubscriptionDemo(
+  win: BrowserWindow,
+  state: SubscriptionDemoState,
+  productName: string,
+): void {
   setSidecarOrigin(win, undefined)
-  void win.loadURL(toDataUrl(renderSubscriptionDemo(state)))
+  void win.loadURL(toDataUrl(renderSubscriptionDemo(state, productName)))
 }
 
 function attachNavigationLock(win: BrowserWindow): void {

@@ -368,6 +368,20 @@ elif [ -n "$prev_sha" ] && [ "$prev_sha" != "$current" ]; then
   need_build=1
 fi
 
+need_cmd node
+node "$script_dir/apply-styling.mjs" generate
+styling_hash=$(tr -d '[:space:]' <"$repo_root/.cache/styling/hash")
+stamp="$clone/.desktop-overlay-stamp"
+applied_hash=
+if [ -f "$stamp" ]; then
+  applied_hash=$(jq -r .stylingHash "$stamp")
+  applied_hash=${applied_hash//$'\r'/}
+fi
+if [ "$styling_hash" != "$applied_hash" ]; then
+  echo "stage-runtime: styling overlay changed; rebuilding harness"
+  need_build=1
+fi
+
 if [ "$need_build" -eq 1 ]; then
   echo "stage-runtime: building harness at $sha"
   "$script_dir/build-harness.sh"
@@ -666,6 +680,23 @@ if [ -n "$leftover" ]; then
   printf '%s\n' "$leftover" >&2
   exit 1
 fi
+
+plugin="$repo_root/.cache/styling/desktop-brand"
+if [ ! -f "$plugin/package.json" ] || [ ! -f "$plugin/lib/index.js" ]; then
+  echo "error: desktop-brand plugin missing at $plugin; run scripts/apply-styling.mjs generate" >&2
+  exit 1
+fi
+if jq -e '.. | strings | select(startswith("workspace:"))' "$plugin/package.json" >/dev/null; then
+  echo "error: staged desktop-brand package.json still contains workspace: protocol" >&2
+  exit 1
+fi
+rm -rf "$stage/node_modules/desktop-brand"
+cp -R "$plugin" "$stage/node_modules/desktop-brand"
+tmp=$(mktemp)
+jq '.dependencies = ((.dependencies // {}) + {"desktop-brand": "0.0.0"})' "$stage/package.json" >"$tmp"
+mv "$tmp" "$stage/package.json"
+node --input-type=module -e "import { createRequire } from 'node:module'; const require = createRequire('$stage/package.json'); require.resolve('desktop-brand/package.json')"
+echo "stage-runtime: staged desktop-brand"
 
 echo "stage-runtime: staged $stage"
 echo "stage-runtime: host smoke: node $stage/sidecar-entry.mjs web --host 127.0.0.1 --port 13800"

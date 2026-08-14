@@ -13,6 +13,26 @@ This repository is a thin packaging repo. It never vendors `deepseek-ai/deepseek
 
 HTTPS is the default. Use SSH only as a fallback.
 
+## `styling.json`
+
+[`styling.json`](../styling.json) is the product brand file. It is **not** the harness pin — that stays in `versions.json`.
+
+| Field | Role |
+| --- | --- |
+| `productName` | Window title, menus, welcome, web `<title>` |
+| `productNameSafe` | Linux install prefix and artifact names. **No spaces** (`chrome-sandbox` execvp-splits `/opt/Foo Bar`) |
+| `desktopName` | Linux executable / StartupWMClass |
+| `appId` | OS application identity. Changing it orphans existing installs |
+| `bootWordmark` | Text on the kernel boot plate (replaces `HARNESS`) |
+| `assets.wordmark` / `assets.logo` / `assets.favicon` | Optional SVG paths. Omitted → generated text/letter marks. Installer icons stay in `resources/icons/` |
+| `colors.*` | Friendly `{ light, dark }` pairs mapped to `--dsw-*` tokens |
+| `tokens` | Extra `--dsw-*` pairs for power users |
+| `welcome.en` / `welcome.zh` | Overlay of `onboarding-copy.ts` only |
+
+`scripts/apply-styling.mjs generate` writes `.cache/styling/` (overlay, `desktop-brand` plugin, `brand.generated.cordis.yml`). `apply` (from `build-harness.sh`) hard-resets `.cache/harness`, copies overlay files, and patches the `AppRoot` `HARNESS` needle. Missing markers fail the build.
+
+Do not overlay `AppRoot.tsx` as a whole file. Do not rewrite hashed Vite `index-*.js`. Do not inject Electron preload JS into the sidecar.
+
 ## Fetch and build
 
 From the repository root. Requires `git` and `jq`. Building also requires Node 24 and pnpm 11.7.0 on `PATH` (see `runtimes` in `versions.json`). The scripts do not install Node or pnpm.

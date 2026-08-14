@@ -1,4 +1,7 @@
 import type { ChildProcess } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { app, BrowserWindow, Menu, shell } from 'electron'
 import {
   beginCLIProxyOAuth,
@@ -35,6 +38,7 @@ import {
   showStatusPage,
   showSubscriptionDemo,
 } from './window.js'
+import { loadDesktopStyling } from './brand.js'
 import { ensureDefaultWorkspace, resolveDefaultWorkspace } from './workspace.js'
 
 let mainWindow: BrowserWindow | null = null
@@ -51,7 +55,7 @@ const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
   app.quit()
 } else {
-  app.setName('DeepSeek Harness')
+  app.setName(loadDesktopStyling().productName)
   app.on('second-instance', () => {
     if (!mainWindow) return
     if (mainWindow.isMinimized()) mainWindow.restore()
@@ -116,7 +120,7 @@ function launch(): void {
   mainWindow = createMainWindow({
     onRestart: () => void restart(),
     onSubscriptionDemoAction: handleSubscriptionDemoAction,
-  })
+  }, loadDesktopStyling().productName)
   mainWindow.on('closed', () => {
     mainWindow = null
   })
@@ -146,7 +150,7 @@ async function startSubscriptionConnector(): Promise<void> {
 function presentSubscriptionDemo(): void {
   if (!mainWindow || mainWindow.isDestroyed()) return
   subscriptionDemoVisible = true
-  showSubscriptionDemo(mainWindow, subscriptionDemoState)
+  showSubscriptionDemo(mainWindow, subscriptionDemoState, loadDesktopStyling().productName)
 }
 
 function handleSubscriptionDemoAction(action: SubscriptionDemoAction): void {
@@ -228,20 +232,33 @@ async function continueToHarness(): Promise<void> {
 }
 
 async function harnessLaunchOptions(): Promise<{
-  readonly patchPath?: string
+  readonly patchPaths: readonly string[]
   readonly cliProxyApiKey?: string
 }> {
-  if (!cliProxy) return {}
-  const patchPath = await writeHarnessProxyPatch(cliProxy, cliProxyConnections)
-  return patchPath ? { patchPath, cliProxyApiKey: cliProxy.apiKey } : {}
+  const patchPaths = [...resolveBrandPatchPaths()]
+  if (!cliProxy) return { patchPaths }
+  const cliproxyPatch = await writeHarnessProxyPatch(cliProxy, cliProxyConnections)
+  if (cliproxyPatch) patchPaths.push(cliproxyPatch)
+  return {
+    patchPaths,
+    cliProxyApiKey: cliProxy.apiKey,
+  }
+}
+
+function resolveBrandPatchPaths(): string[] {
+  const packaged = join(process.resourcesPath, 'brand.cordis.yml')
+  const unpackaged = join(fileURLToPath(new URL('..', import.meta.url)), '.cache', 'styling', 'brand.generated.cordis.yml')
+  const candidate = app.isPackaged ? packaged : unpackaged
+  return existsSync(candidate) ? [candidate] : []
 }
 
 async function startSession(options: {
-  readonly patchPath?: string
+  readonly patchPaths?: readonly string[]
   readonly cliProxyApiKey?: string
 } = {}): Promise<void> {
   if (!mainWindow || mainWindow.isDestroyed()) return
-  showStatusPage(mainWindow, 'Starting DeepSeek Harness…', 'Waiting for the local web server.')
+  const productName = loadDesktopStyling().productName
+  showStatusPage(mainWindow, `Starting ${productName}…`, 'Waiting for the local web server.')
 
   const workspaceDir = await ensureDefaultWorkspace(resolveDefaultWorkspace())
   const port = await pickListenPort()
@@ -259,7 +276,7 @@ async function startSession(options: {
     workspaceDir,
     port,
     readyTimeoutMs,
-    patchPath: options.patchPath,
+    patchPaths: options.patchPaths,
     additionalEnv: options.cliProxyApiKey
       ? { CLIPROXY_API_KEY: options.cliProxyApiKey }
       : undefined,
@@ -272,7 +289,7 @@ async function startSession(options: {
     if (sidecar === handle) sidecar = null
     if (mainWindow && !mainWindow.isDestroyed()) {
       showErrorPage(mainWindow, {
-        title: 'DeepSeek Harness stopped',
+        title: `${loadDesktopStyling().productName} stopped`,
         detail: `The sidecar exited (code ${code ?? 'null'}, signal ${signal ?? 'null'}).`,
         stderr: tail,
       })
@@ -311,7 +328,7 @@ function presentError(err: unknown): void {
   appendLog('main.log', formatLogLine(`error ${detail}`))
   if (mainWindow && !mainWindow.isDestroyed()) {
     showErrorPage(mainWindow, {
-      title: 'DeepSeek Harness failed to start',
+      title: `${loadDesktopStyling().productName} failed to start`,
       detail,
       stderr,
     })

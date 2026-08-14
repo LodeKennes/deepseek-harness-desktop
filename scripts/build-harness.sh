@@ -55,6 +55,8 @@ fi
 
 echo "build-harness: node $node_ver (pin ${expected_node}), pnpm $pnpm_ver (pin ${expected_pnpm})"
 
+"$script_dir/apply-harness-overlay.sh"
+
 cd "$dir"
 pnpm install --frozen-lockfile
 pnpm run build

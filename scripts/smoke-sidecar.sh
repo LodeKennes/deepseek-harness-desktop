@@ -61,6 +61,14 @@ workdir=$(mktemp -d)
 dsh_home=$(mktemp -d)
 patch="$workdir/smoke.cordis.yml"
 printf '[]\n' > "$patch"
+brand_patch="$repo_root/.cache/styling/brand.generated.cordis.yml"
+if [ ! -f "$brand_patch" ]; then
+  node "$script_dir/apply-styling.mjs" generate
+fi
+extra_patch=()
+if [ -f "$brand_patch" ]; then
+  extra_patch=(--patch "$brand_patch")
+fi
 pid=
 fifo_fd_open=0
 
@@ -98,6 +106,10 @@ if is_windows; then
   SMOKE_NODE=$(win_path "$node_bin")
   SMOKE_ENTRY=$(win_path "$entry")
   SMOKE_PATCH=$(win_path "$patch")
+  if [ -f "$brand_patch" ]; then
+    SMOKE_BRAND_PATCH=$(win_path "$brand_patch")
+    export SMOKE_BRAND_PATCH
+  fi
   export SMOKE_NODE SMOKE_ENTRY SMOKE_PATCH SMOKE_PORT="$port"
   export SMOKE_READY_TIMEOUT="$ready_timeout" SMOKE_QUIT_TIMEOUT="$quit_timeout"
   "$helper_node" --input-type=module - "$workdir" <<'JS'
@@ -113,7 +125,11 @@ const port = process.env.SMOKE_PORT
 const readyMs = Number(process.env.SMOKE_READY_TIMEOUT || 180) * 1000
 const quitMs = Number(process.env.SMOKE_QUIT_TIMEOUT || 10) * 1000
 
-const child = spawn(nodeBin, [entry, 'web', '--patch', patch, '--host', '127.0.0.1', '--port', port], {
+const brand = process.env.SMOKE_BRAND_PATCH
+const argv = [entry, 'web', '--patch', patch]
+if (brand) argv.push('--patch', brand)
+argv.push('--host', '127.0.0.1', '--port', port)
+const child = spawn(nodeBin, argv, {
   stdio: ['pipe', 'pipe', 'pipe'],
   windowsHide: true,
   env: process.env,
@@ -202,7 +218,7 @@ fi
 
 mkfifo "$workdir/in"
 # Reader (sidecar stdin) is opened by the child; open the writer after spawn.
-"$node_bin" "$entry" web --patch "$patch" --host 127.0.0.1 --port "$port" \
+"$node_bin" "$entry" web --patch "$patch" "${extra_patch[@]}" --host 127.0.0.1 --port "$port" \
   <"$workdir/in" >"$workdir/out" 2>"$workdir/err" &
 pid=$!
 exec 3>"$workdir/in"
@@ -240,10 +256,19 @@ fi
 
 echo "smoke-sidecar: ready $url"
 
+html=$(curl -sS --max-time 10 "$url")
 code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "$url")
 if [ "$code" != "200" ]; then
   echo "error: expected HTTP 200 from $url, got $code" >&2
   exit 1
+fi
+if [ -f "$brand_patch" ]; then
+  product_name=$(jq -r .productName "$repo_root/styling.json")
+  if ! printf '%s' "$html" | grep -Fq "<title>${product_name}</title>"; then
+    echo "error: GET / missing <title>${product_name}</title>" >&2
+    printf '%s\n' "$html" | head -n 20 >&2
+    exit 1
+  fi
 fi
 
 printf 'quit\n' >&3

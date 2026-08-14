@@ -18,7 +18,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "tsc && electron .",
-    "test": "tsc && node --test out/cliproxy.test.js out/env.test.js out/subscription-demo.test.js out/workspace.test.js",
+    "test": "tsc && node --test out/cliproxy.test.js out/env.test.js out/sidecar.test.js out/styling.test.js out/subscription-demo.test.js out/workspace.test.js scripts/styling.test.mjs",
     "package": "./scripts/package.sh"
   },
   "devDependencies": {

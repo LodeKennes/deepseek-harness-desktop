@@ -1,0 +1,37 @@
+{
+  "productName": "DeepSeek Harness",
+  "productNameSafe": "DeepSeek-Harness",
+  "desktopName": "deepseek-harness",
+  "appId": "ai.deepseek.harness.desktop",
+  "bootWordmark": "HARNESS",
+  "colors": {
+    "brandPrimary": {
+      "light": "rgb(15, 17, 21)",
+      "dark": "rgb(249, 250, 251)"
+    },
+    "sidebarFill": {
+      "light": "rgb(249, 250, 251)",
+      "dark": "rgb(27, 27, 28)"
+    },
+    "bubble": {
+      "light": "rgb(237, 243, 254)",
+      "dark": "rgb(44, 44, 46)"
+    },
+    "sidebarActiveAccent": {
+      "light": "rgb(228, 237, 253)",
+      "dark": "rgb(65, 118, 230)"
+    }
+  },
+  "welcome": {
+    "en": {
+      "title": "Welcome",
+      "body": "DeepSeek Harness is a desktop build of the DeepSeek Harness agent. Connect a subscription to start, or skip and add an API provider later under Settings → Models.",
+      "continueLabel": "Continue"
+    },
+    "zh": {
+      "title": "欢迎",
+      "body": "DeepSeek Harness 是 DeepSeek Harness 智能体的桌面版。连接订阅即可开始，或稍后在 设置 → 模型 中添加 API 提供方。",
+      "continueLabel": "继续"
+    }
+  }
+}

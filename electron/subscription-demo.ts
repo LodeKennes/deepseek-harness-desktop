@@ -118,7 +118,10 @@ export function parseSubscriptionDemoAction(url: string): SubscriptionDemoAction
   return { type: action, provider }
 }
 
-export function renderSubscriptionDemo(state: SubscriptionDemoState): string {
+export function renderSubscriptionDemo(
+  state: SubscriptionDemoState,
+  productName = 'DeepSeek Harness',
+): string {
   const connectedCount = subscriptionProviderIds.filter(
     (provider) => state.statuses[provider] === 'connected',
   ).length
@@ -277,7 +280,7 @@ export function renderSubscriptionDemo(state: SubscriptionDemoState): string {
 <body>
   <div class="shell">
     <header class="topbar">
-      <div class="brand"><span class="brand-mark" aria-hidden="true">D</span>DeepSeek Harness</div>
+      <div class="brand"><span class="brand-mark" aria-hidden="true">${escapeHtml(productName.trim()[0] || 'D')}</span>${escapeHtml(productName)}</div>
       <span class="demo-badge">Local connector</span>
     </header>
     <main>

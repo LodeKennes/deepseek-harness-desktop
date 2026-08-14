@@ -6,7 +6,10 @@ import { app } from 'electron'
 import { buildSidecarEnv } from './env.js'
 import { appendLog, formatLogLine } from './logs.js'
 import { persistListenPort } from './port.js'
+import { sidecarArgv } from './sidecar-argv.js'
 import { resolveDshHome } from './workspace.js'
+
+export { sidecarArgv } from './sidecar-argv.js'
 
 const READY_RE = /^dsh web: (http:\/\/127\.0\.0\.1:\d+)/
 export const DEFAULT_READY_TIMEOUT_MS = 60_000
@@ -67,6 +70,7 @@ export async function startSidecar(opts: {
   port: number
   readyTimeoutMs?: number
   patchPath?: string
+  patchPaths?: readonly string[]
   additionalEnv?: NodeJS.ProcessEnv
 }): Promise<SidecarHandle> {
   const node =
@@ -86,15 +90,11 @@ export async function startSidecar(opts: {
     spawnHelperPath,
     source: { ...process.env, ...opts.additionalEnv },
   })
-  const argv = [
-    entry,
-    'web',
-    ...(opts.patchPath ? ['--patch', opts.patchPath] : []),
-    '--host',
-    '127.0.0.1',
-    '--port',
-    String(opts.port),
-  ]
+  const argv = sidecarArgv(entry, {
+    port: opts.port,
+    patchPath: opts.patchPath,
+    patchPaths: opts.patchPaths,
+  })
   appendLog(
     'main.log',
     formatLogLine(`spawn ${node} ${argv.join(' ')} cwd=${opts.workspaceDir} port=${opts.port}`),

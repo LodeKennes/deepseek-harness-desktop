@@ -26,6 +26,8 @@ regular API provider later in Harness settings.
 
 This repo does **not** contain the harness source, a git submodule, or vendored packages. CI (and local development) clones a pinned revision of [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness) and builds installers from that SHA. The pin lives in [`versions.json`](versions.json).
 
+Brand, colors, logos, and welcome copy live in [`styling.json`](styling.json). The fetch/build/stage pipeline applies that file as a fail-loud overlay — edit the JSON, rebuild. See [Development](docs/development.md#stylingjson).
+
 End users do not need Node.js, pnpm, Python, or a C++ toolchain for the primary installers. Installed size is ~0.5 GB.
 
 - [Install (per OS, shared `~/.dsh`, plugins)](docs/user-install.md)
