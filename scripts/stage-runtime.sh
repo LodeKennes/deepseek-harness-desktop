@@ -346,11 +346,10 @@ fi
 need_cmd jq
 need_cmd git
 need_cmd pnpm
+need_cmd npm
 
-# See build-harness.sh: do not let pnpm 11.21 swap to the harness pin's
-# @pnpm/exe.darwin-x64, which that lockfile never recorded.
-export npm_config_manage_package_manager_versions=false
-export npm_config_pm_on_fail=ignore
+# shellcheck source=lib/harness-pnpm.sh
+. "$script_dir/lib/harness-pnpm.sh"
 
 prev_sha=
 if [ -d "$clone/.git" ]; then
@@ -403,7 +402,7 @@ mkdir -p "$(dirname "$stage")"
 
 (
   cd "$clone"
-  pnpm --filter @deepseek-ai/dsh deploy \
+  harness_pnpm --filter @deepseek-ai/dsh deploy \
     --legacy --prod \
     --config.node-linker=hoisted \
     --config.auto-install-peers=false \
