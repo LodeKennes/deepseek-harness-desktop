@@ -399,6 +399,7 @@ fi
 echo "stage-runtime: deploying @deepseek-ai/dsh → $stage"
 rm -rf "$stage"
 mkdir -p "$(dirname "$stage")"
+printf 'pm-on-fail=ignore\n' >"$clone/.npmrc"
 
 (
   cd "$clone"

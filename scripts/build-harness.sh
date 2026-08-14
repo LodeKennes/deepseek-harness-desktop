@@ -60,6 +60,9 @@ echo "build-harness: node $node_ver (pin ${expected_node}), pnpm $pnpm_ver (pin 
 
 "$script_dir/apply-harness-overlay.sh"
 
+# Local clone only. Do not spend the overlay budget on this.
+printf 'pm-on-fail=ignore\n' >"$dir/.npmrc"
+
 cd "$dir"
 harness_pnpm install --frozen-lockfile
 harness_pnpm run build
