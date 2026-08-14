@@ -373,9 +373,29 @@ fi
 wrapper_pid=
 
 # --- unpacked .deb starts (chrome-sandbox setuid as postinst would) ---
-bin=$(find "$workdir/deb" -type f -name deepseek-harness -print -quit || true)
-if [ -z "$bin" ]; then
+# Fresh profile: AppImage left listen-port under the previous DSH_HOME.
+export DSH_HOME="$workdir/dsh-deb"
+export HOME="$workdir/home-deb"
+export ELECTRON_DISABLE_SANDBOX=1
+mkdir -p "$HOME" "$DSH_HOME"
+
+# /opt/DeepSeek Harness/ splits Chromium execvp at the space. Relocate.
+opt_dir=$(find "$workdir/deb/opt" -mindepth 1 -maxdepth 1 -type d -print -quit || true)
+launch_dir="$workdir/deb-launch/deepseek-harness"
+if [ -z "$opt_dir" ]; then
+  echo "error: unpacked .deb has no /opt install directory" >&2
+  find "$workdir/deb" -maxdepth 3 -print >&2 || true
+  exit 1
+fi
+mkdir -p "$(dirname "$launch_dir")"
+mv "$opt_dir" "$launch_dir"
+bin="$launch_dir/deepseek-harness"
+if [ ! -x "$bin" ]; then
+  bin=$(find "$launch_dir" -maxdepth 1 -type f -name deepseek-harness -print -quit || true)
+fi
+if [ -z "$bin" ] || [ ! -x "$bin" ]; then
   echo "error: unpacked .deb has no deepseek-harness binary" >&2
+  ls -la "$launch_dir" >&2 || true
   exit 1
 fi
 
@@ -383,8 +403,6 @@ fi
 # kernels reject the zygote sandbox (EINVAL). The shipped .deb Exec stays
 # clean (asserted above). This launch is CI-only.
 echo "smoke-packaged: unpacked .deb launch uses --no-sandbox (CI unpack only)"
-export HOME="$workdir/home-deb"
-mkdir -p "$HOME"
 deb_extra=(--no-sandbox --disable-gpu --disable-dev-shm-usage)
 
 xvfb-run --auto-servernum --server-args='-screen 0 1280x800x24' \

@@ -40,6 +40,8 @@ linux:
   category: Development
   icon: resources/icons
   executableName: deepseek-harness
+  # package.sh also passes --config.productName=DeepSeek-Harness so the
+  # install prefix is /opt/DeepSeek-Harness (no space; Chromium execvp).
   # Match package.json desktopName / StartupWMClass / binary.
   syncDesktopName: true
   synopsis: DeepSeek Harness desktop

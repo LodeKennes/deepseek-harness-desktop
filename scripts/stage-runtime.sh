@@ -396,15 +396,70 @@ if [ ! -f "$manifest" ]; then
   exit 1
 fi
 
-# Workspace package roots (no node_modules cycles). Built once.
+# Workspace package roots (no node_modules cycles). Built once with Node:
+# Windows jq.exe + MSYS path conversion writes D:\... into the map, and
+# Git Bash [ -e ] treats backslashes as escapes, so vendor/cordis vanished.
 workspace_map=$(mktemp)
 trap 'rm -f "$workspace_map"' EXIT
-find "$clone/packages" "$clone/apps" "$clone/vendor" "$clone/native" \
-  -name package.json ! -path '*/node_modules/*' -print \
-  | while IFS= read -r mf; do
-      mf=${mf%$'\r'}
-      jq -r --arg p "$(dirname "$mf")" 'select(.name != null) | .name + "\t" + $p' "$mf"
-    done >"$workspace_map"
+clone_for_node=$clone
+map_for_node=$workspace_map
+if command -v cygpath >/dev/null 2>&1; then
+  clone_for_node=$(cygpath -w "$clone")
+  map_for_node=$(cygpath -w "$workspace_map")
+fi
+CLONE_FOR_NODE="$clone_for_node" MAP_OUT="$map_for_node" node --input-type=module <<'JS'
+import { readdirSync, readFileSync, existsSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+
+const clone = process.env.CLONE_FOR_NODE
+const out = process.env.MAP_OUT
+const lines = []
+
+function walk(dir) {
+  let entries
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return
+  }
+  for (const ent of entries) {
+    if (ent.name === 'node_modules' || ent.name === '.git') continue
+    const p = join(dir, ent.name)
+    if (ent.isFile() && ent.name === 'package.json') {
+      try {
+        const pkg = JSON.parse(readFileSync(p, 'utf8'))
+        if (pkg && typeof pkg.name === 'string' && pkg.name) {
+          lines.push(`${pkg.name}\t${dirname(p)}`)
+        }
+      } catch {
+        // ignore unreadable / invalid manifests
+      }
+      continue
+    }
+    if (ent.isDirectory()) walk(p)
+  }
+}
+
+for (const rel of ['packages', 'apps', 'vendor', 'native']) {
+  const root = join(clone, rel)
+  if (existsSync(root)) walk(root)
+}
+
+writeFileSync(out, lines.length ? `${lines.join('\n')}\n` : '', 'utf8')
+JS
+echo "stage-runtime: workspace map $(wc -l <"$workspace_map") packages"
+
+to_posix_path() {
+  local p=$1
+  p=${p//$'\r'/}
+  [ -n "$p" ] || return 1
+  if command -v cygpath >/dev/null 2>&1; then
+    case "$p" in
+      [A-Za-z]:[\\/]*|\\\\*) p=$(cygpath -u "$p") ;;
+    esac
+  fi
+  printf '%s\n' "$p"
+}
 
 # Direct deps first (legacy hoist), then walk every staged manifest's
 # dependencies + peerDependencies until the closure is closed. Peers like
@@ -412,16 +467,20 @@ find "$clone/packages" "$clone/apps" "$clone/vendor" "$clone/native" \
 # on @deepseek-ai/dsh itself.
 find_dep_source() {
   local name=$1
-  local path
+  name=${name//$'\r'/}
+  local path posix vendor vendor_name store_id store_dir
   path=$(awk -F '\t' -v n="$name" '$1 == n { print $2; exit }' "$workspace_map")
-  path=${path%$'\r'}
-  if [ -n "$path" ] && [ -e "$path" ]; then
-    printf '%s\n' "$path"
+  posix=$(to_posix_path "$path" || true)
+  if [ -n "$posix" ] && [ -e "$posix" ]; then
+    printf '%s\n' "$posix"
     return 0
   fi
-  local vendor
+  # vendor/* dir names are unscoped (cordis); package.json name is scoped.
   for vendor in "$clone"/vendor/*; do
-    if [ -f "$vendor/package.json" ] && [ "$(jq -r .name "$vendor/package.json")" = "$name" ]; then
+    [ -f "$vendor/package.json" ] || continue
+    vendor_name=$(jq -r .name "$vendor/package.json")
+    vendor_name=${vendor_name//$'\r'/}
+    if [ "$vendor_name" = "$name" ]; then
       printf '%s\n' "$vendor"
       return 0
     fi
@@ -434,11 +493,12 @@ find_dep_source() {
     printf '%s\n' "$clone/node_modules/$name"
     return 0
   fi
-  local store_id=${name//\//+}
-  local store_dir
-  # find, not a bash glob: Git Bash on Windows mishandles @scope+name@ver dirs.
+  store_id=${name//\//+}
+  # find, not a bash glob: Git Bash mishandles @scope+name@ver dirs.
+  # No -type d: Windows pnpm store entries are often junctions.
   if [ -d "$clone/node_modules/.pnpm" ]; then
-    store_dir=$(find "$clone/node_modules/.pnpm" -maxdepth 1 -type d -name "${store_id}@*" | head -n 1)
+    store_dir=$(find "$clone/node_modules/.pnpm" -maxdepth 1 -name "${store_id}@*" | head -n 1)
+    store_dir=${store_dir//$'\r'/}
     if [ -n "$store_dir" ] && [ -e "$store_dir/node_modules/$name" ]; then
       printf '%s\n' "$store_dir/node_modules/$name"
       return 0
@@ -449,6 +509,7 @@ find_dep_source() {
 restored=
 missing=
 while IFS= read -r name; do
+  name=${name//$'\r'/}
   [ -n "$name" ] || continue
   dest="$stage/node_modules/$name"
   if [ -e "$dest" ]; then
@@ -468,8 +529,10 @@ while [ "$pass" -lt 20 ]; do
   pass=$((pass + 1))
   added=
   while IFS= read -r mf; do
+    mf=${mf//$'\r'/}
     [ -f "$mf" ] || continue
     while IFS= read -r name; do
+      name=${name//$'\r'/}
       [ -n "$name" ] || continue
       dest="$stage/node_modules/$name"
       if [ -e "$dest" ]; then
@@ -498,6 +561,10 @@ done
 if [ -n "$missing" ]; then
   missing=$(printf '%s\n' $missing | sort -u | tr '\n' ' ')
   echo "error: staged dependencies remain missing: $missing" >&2
+  echo "stage-runtime: workspace map entries:" >&2
+  grep -E '@deepseek-ai/cordis' "$workspace_map" >&2 || true
+  echo "stage-runtime: vendor/:" >&2
+  ls -la "$clone/vendor" >&2 || true
   exit 1
 fi
 if [ -n "$restored" ]; then

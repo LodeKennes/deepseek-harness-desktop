@@ -55,7 +55,12 @@ pack_arch=$(detect_pack_arch)
 case "$(uname -s)" in
   Linux*)
     pack_os=linux
-    builder_args=(--linux deb AppImage --"$pack_arch")
+    # productName "DeepSeek Harness" installs to /opt/DeepSeek Harness/, and
+    # Chromium LaunchProcess execvp-splits chrome-sandbox at the space.
+    builder_args=(
+      --linux deb AppImage --"$pack_arch"
+      --config.productName=DeepSeek-Harness
+    )
     artifact_glob="DeepSeek-Harness-*-linux-${pack_arch}.*"
     ;;
   Darwin*)

@@ -79,8 +79,8 @@ jobs:
         with:
           name: DeepSeek-Harness-${{ steps.ver.outputs.version }}-linux-x64
           path: |
-            dist/installers/DeepSeek-Harness-*-linux-x64.deb
-            dist/installers/DeepSeek-Harness-*-linux-x64.AppImage
+            dist/installers/DeepSeek-Harness-*-linux-amd64.deb
+            dist/installers/DeepSeek-Harness-*-linux-x86_64.AppImage
           if-no-files-found: error
           retention-days: 14
 
