@@ -2,6 +2,9 @@ import { access, mkdir, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { app } from 'electron'
+import { pickDefaultWorkspace } from './workspace-pick.js'
+
+export { pickDefaultWorkspace } from './workspace-pick.js'
 
 const DSH_HOME_DIR_NAME = '.dsh'
 const DSH_HOME_ENV = 'DSH_HOME'
@@ -30,28 +33,18 @@ export function resolveDshHome(
   return resolve(expandHomePath(selected))
 }
 
-function samePath(a: string, b: string): boolean {
-  const left = resolve(a)
-  const right = resolve(b)
-  return process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right
+function readDocumentsPath(): string | undefined {
+  try {
+    return app.getPath('documents')
+  } catch {
+    // GHA Windows (and some redirected profiles) throw
+    // "Failed to get 'documents' path". Do not fail desktop startup.
+    return undefined
+  }
 }
 
 export function resolveDefaultWorkspace(): string {
-  const home = homedir()
-  const dshHome = resolveDshHome()
-  const documents = app.getPath('documents')
-  const lastResort = join(dshHome, 'default-workspace')
-  const candidates = [
-    // Some Linux XDG setups set DOCUMENTS=$HOME. Do not treat that as Documents.
-    samePath(documents, home) ? undefined : join(documents, 'DeepSeek Harness'),
-    join(home, 'Documents', 'DeepSeek Harness'),
-    lastResort,
-  ]
-  for (const dir of candidates) {
-    if (dir === undefined || samePath(dir, home) || samePath(dir, dshHome)) continue
-    return dir
-  }
-  return lastResort
+  return pickDefaultWorkspace(homedir(), resolveDshHome(), readDocumentsPath())
 }
 
 export async function ensureDefaultWorkspace(dir: string): Promise<string> {

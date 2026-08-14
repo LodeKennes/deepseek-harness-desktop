@@ -117,7 +117,11 @@ APPDATA=$(win_path "$workdir/home/AppData/Roaming")
 export LOCALAPPDATA
 LOCALAPPDATA=$(win_path "$workdir/home/AppData/Local")
 export DSH_TELEMETRY_DISABLED=1
-mkdir -p "$workdir/dsh" "$workdir/home/AppData/Roaming" "$workdir/home/AppData/Local"
+mkdir -p \
+  "$workdir/dsh" \
+  "$workdir/home/Documents" \
+  "$workdir/home/AppData/Roaming" \
+  "$workdir/home/AppData/Local"
 
 ready_timeout=${SMOKE_READY_TIMEOUT:-180}
 orphan_timeout=${SMOKE_ORPHAN_TIMEOUT:-2}
@@ -160,6 +164,8 @@ if [ -z "$url" ]; then
   cat "$workdir/dsh/desktop/sidecar.log" >&2 || true
   echo "----- main.log -----" >&2
   cat "$workdir/dsh/desktop/main.log" >&2 || true
+  echo "----- desktop dir -----" >&2
+  ls -la "$workdir/dsh" "$workdir/dsh/desktop" >&2 || true
   exit 1
 fi
 
