@@ -394,13 +394,27 @@ if [ ! -f "$manifest" ]; then
   exit 1
 fi
 
+# Workspace package roots (no node_modules cycles). Built once.
+workspace_map=$(mktemp)
+trap 'rm -f "$workspace_map"' EXIT
+find "$clone/packages" "$clone/apps" "$clone/vendor" "$clone/native" \
+  -name package.json \! -path '*/node_modules/*' -print \
+  | while IFS= read -r mf; do
+      jq -r --arg p "$(dirname "$mf")" 'select(.name != null) | .name + "\t" + $p' "$mf"
+    done >"$workspace_map"
+
 # Direct deps first (legacy hoist), then walk every staged manifest's
 # dependencies + peerDependencies until the closure is closed. Peers like
 # @deepseek-ai/cordis-plugin-group are required at runtime but not listed
 # on @deepseek-ai/dsh itself.
 find_dep_source() {
   local name=$1
-  local path vendor
+  local path
+  path=$(awk -F '\t' -v n="$name" '$1 == n { print $2; exit }' "$workspace_map")
+  if [ -n "$path" ] && [ -e "$path" ]; then
+    printf '%s\n' "$path"
+    return 0
+  fi
   if [ -e "$clone/apps/cli/node_modules/$name" ]; then
     printf '%s\n' "$clone/apps/cli/node_modules/$name"
     return 0
@@ -419,12 +433,6 @@ find_dep_source() {
     fi
   done
   shopt -u nullglob
-  for vendor in "$clone"/vendor/*; do
-    if [ -f "$vendor/package.json" ] && [ "$(jq -r .name "$vendor/package.json")" = "$name" ]; then
-      printf '%s\n' "$vendor"
-      return 0
-    fi
-  done
 }
 
 restored=
@@ -473,6 +481,7 @@ while [ "$pass" -lt 20 ]; do
 done
 
 if [ -n "$missing" ]; then
+  missing=$(printf '%s\n' $missing | sort -u | tr '\n' ' ')
   echo "error: staged dependencies remain missing: $missing" >&2
   exit 1
 fi
