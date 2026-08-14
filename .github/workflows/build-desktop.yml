@@ -16,7 +16,9 @@ permissions:
 
 concurrency:
   group: build-desktop-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # Cancel superseded pushes/PRs on the same ref. Tag/release calls use a
+  # different ref (refs/tags/desktop-v*) so they are not cancelled.
+  cancel-in-progress: true
 
 env:
   DSH_TELEMETRY_DISABLED: "1"
