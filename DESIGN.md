@@ -17,7 +17,7 @@
 - Success signals: a new user can identify their provider, understand that sign-in happens in a browser, see a connected state, and continue to Harness without opening a terminal.
 
 ## Personas and jobs
-- Primary personas: developers who already pay for ChatGPT/Codex, Claude, or Google Antigravity and want to use that access in a local agent desktop application.
+- Primary personas: developers who already pay for ChatGPT/Codex, Claude, Google Antigravity, xAI/Grok, or Kimi and want to use that access in a local agent desktop application.
 - User jobs: connect an existing account, verify that a usable model was found, change or remove an account, and start working.
 - Key contexts of use: first launch after installation and later account management from the application menu.
 
@@ -54,7 +54,7 @@
 
 ## Responsive behavior
 - Supported breakpoints/devices: Electron desktop window at 800×560 minimum through large desktop displays.
-- Layout adaptations: three provider cards collapse to one column below 760 px; footer actions wrap without obscuring content.
+- Layout adaptations: provider rows stay a single list; footer actions wrap without obscuring content.
 - Touch/hover differences: all actions have generous hit areas and visible focus; hover is supplemental.
 
 ## Interaction states

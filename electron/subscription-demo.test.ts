@@ -19,6 +19,14 @@ test('parses only reserved subscription demo actions and known providers', () =>
     { type: 'disconnect', provider: 'antigravity' },
   )
   assert.deepEqual(
+    parseSubscriptionDemoAction(`${SUBSCRIPTION_DEMO_URL}?action=connect&provider=grok`),
+    { type: 'connect', provider: 'grok' },
+  )
+  assert.deepEqual(
+    parseSubscriptionDemoAction(`${SUBSCRIPTION_DEMO_URL}?action=connect&provider=kimi`),
+    { type: 'connect', provider: 'kimi' },
+  )
+  assert.deepEqual(
     parseSubscriptionDemoAction(`${SUBSCRIPTION_DEMO_URL}?action=continue`),
     { type: 'continue' },
   )
@@ -60,6 +68,8 @@ test('renders only connect actions, status, and continue', () => {
   assert.match(html, /ChatGPT \/ Codex/)
   assert.match(html, /Claude/)
   assert.match(html, /Google Antigravity/)
+  assert.match(html, /xAI \/ Grok/)
+  assert.match(html, /Kimi/)
   assert.match(html, /:focus-visible/)
   assert.match(html, /#0f1115/)
   assert.match(html, /#f9fafb/)
@@ -73,6 +83,15 @@ test('renders only connect actions, status, and continue', () => {
   assert.doesNotMatch(html, /brand-mark/)
   assert.doesNotMatch(html, /linear-gradient/)
   assert.doesNotMatch(html, /Skip for now/)
+})
+
+test('connecting device-code providers show the user code', () => {
+  const html = renderSubscriptionDemo(setSubscriptionProviderState(createSubscriptionDemoState(), 'grok', {
+    status: 'connecting',
+    code: 'ABCD-1234',
+  }))
+  assert.match(html, /Waiting for browser… enter ABCD-1234/)
+  assert.match(html, /xAI \/ Grok/)
 })
 
 test('skip is the only continue action when nothing is connected', () => {

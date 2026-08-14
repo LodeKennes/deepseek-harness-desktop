@@ -4,11 +4,12 @@
 
 Download installers from the [latest GitHub Release](https://github.com/LodeKennes/deepseek-harness-desktop/releases/latest) (`desktop-v*` tags), or install through a package manager (below). End users do **not** need Node.js, pnpm, Python, or a C++ toolchain for the primary installers. Installed size is on the order of **0.5 GB** (compressed downloads ~180–260 MB). How each gallery is published: [packaging/README.md](../packaging/README.md).
 
-On first launch, connect an eligible ChatGPT/Codex, Claude, or Google
-Antigravity account in your system browser. The app discovers its models and
-configures Harness automatically. You can skip this screen and instead add a
-regular API provider later under **Settings → Models**. Then **Choose
-workspace** in the UI.
+On first launch, connect an eligible ChatGPT/Codex, Claude, Google
+Antigravity, xAI/Grok, or Kimi account in your system browser. Grok and Kimi
+may show a short device code to type on the provider page. The app discovers
+its models and configures Harness automatically. You can skip this screen and
+instead add a regular API provider later under **Settings → Models**. Then
+**Choose workspace** in the UI.
 
 The bundled CLIProxyAPI listens on localhost only. Its account files live under
 `~/.dsh/desktop/cliproxyapi/auth` (or the equivalent `%USERPROFILE%\.dsh` path

@@ -2,7 +2,7 @@ import { windowChromePageCss, windowControlButtonsHtml } from './window-frame.js
 
 export const SUBSCRIPTION_DEMO_URL = 'https://dsh-desktop.invalid/subscriptions'
 
-export const subscriptionProviderIds = ['codex', 'claude', 'antigravity'] as const
+export const subscriptionProviderIds = ['codex', 'claude', 'antigravity', 'grok', 'kimi'] as const
 
 export type SubscriptionProviderId = (typeof subscriptionProviderIds)[number]
 export type SubscriptionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
@@ -12,6 +12,7 @@ export interface SubscriptionDemoState {
   readonly accounts: Readonly<Partial<Record<SubscriptionProviderId, string>>>
   readonly models: Readonly<Partial<Record<SubscriptionProviderId, readonly string[]>>>
   readonly errors: Readonly<Partial<Record<SubscriptionProviderId, string>>>
+  readonly codes: Readonly<Partial<Record<SubscriptionProviderId, string>>>
 }
 
 export type SubscriptionDemoAction =
@@ -28,19 +29,14 @@ const providers: readonly ProviderDefinition[] = [
   { id: 'codex', name: 'ChatGPT / Codex' },
   { id: 'claude', name: 'Claude' },
   { id: 'antigravity', name: 'Google Antigravity' },
+  { id: 'grok', name: 'xAI / Grok' },
+  { id: 'kimi', name: 'Kimi' },
 ]
 
 export function createSubscriptionDemoState(): SubscriptionDemoState {
-  return {
-    statuses: {
-      codex: 'disconnected',
-      claude: 'disconnected',
-      antigravity: 'disconnected',
-    },
-    accounts: {},
-    models: {},
-    errors: {},
-  }
+  const statuses = {} as Record<SubscriptionProviderId, SubscriptionStatus>
+  for (const id of subscriptionProviderIds) statuses[id] = 'disconnected'
+  return { statuses, accounts: {}, models: {}, errors: {}, codes: {} }
 }
 
 export function setSubscriptionStatus(
@@ -59,17 +55,21 @@ export function setSubscriptionProviderState(
     readonly account?: string
     readonly models?: readonly string[]
     readonly error?: string
+    readonly code?: string
   },
 ): SubscriptionDemoState {
   const accounts = { ...state.accounts }
   const models = { ...state.models }
   const errors = { ...state.errors }
+  const codes = { ...state.codes }
   if (next.account) accounts[provider] = next.account
   else delete accounts[provider]
   if (next.models && next.models.length > 0) models[provider] = next.models
   else delete models[provider]
   if (next.error) errors[provider] = next.error
   else delete errors[provider]
+  if (next.code) codes[provider] = next.code
+  else delete codes[provider]
   return {
     statuses: {
       ...state.statuses,
@@ -78,6 +78,7 @@ export function setSubscriptionProviderState(
     accounts,
     models,
     errors,
+    codes,
   }
 }
 
@@ -194,6 +195,7 @@ export function renderSubscriptionDemo(
         state.statuses[provider.id],
         state.accounts[provider.id],
         state.errors[provider.id],
+        state.codes[provider.id],
       )).join('')}
     </ul>
     <a class="continue${connected ? '' : ' skip'}" href="${actionUrl('continue')}">${continueLabel}</a>
@@ -207,11 +209,14 @@ function renderProvider(
   status: SubscriptionStatus,
   account: string | undefined,
   error: string | undefined,
+  code?: string,
 ): string {
   const detail = status === 'connected'
     ? account ? `Connected · ${escapeHtml(account)}` : 'Connected'
     : status === 'connecting'
-      ? 'Waiting for browser…'
+      ? (code
+        ? `Waiting for browser… enter ${escapeHtml(code)}`
+        : 'Waiting for browser…')
       : status === 'error'
         ? (error ? escapeHtml(error) : 'Connection failed')
         : ''

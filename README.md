@@ -81,6 +81,8 @@ On first launch, connect an account you already pay for. The app starts a localh
 | ChatGPT / Codex | ChatGPT |
 | Claude | Claude |
 | Google Antigravity | Google |
+| SuperGrok / Grok Build | xAI / Grok |
+| Kimi Code | Kimi |
 
 Skip the screen to add an API key later under **Settings → Models**. Reopen it from **Subscriptions → Manage subscriptions…**.
 

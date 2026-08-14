@@ -16,15 +16,20 @@ import { resolveDshHome } from './workspace.js'
 
 const READY_TIMEOUT_MS = 20_000
 const OAUTH_TIMEOUT_MS = 5 * 60_000
+const DEVICE_OAUTH_TIMEOUT_MS = 30 * 60_000
 const PROVIDER_TYPES: Readonly<Record<SubscriptionProviderId, readonly string[]>> = {
   codex: ['codex'],
   claude: ['claude', 'anthropic'],
   antigravity: ['antigravity'],
+  grok: ['xai', 'grok'],
+  kimi: ['kimi'],
 }
 const AUTH_ENDPOINTS: Readonly<Record<SubscriptionProviderId, string>> = {
   codex: 'codex-auth-url',
   claude: 'anthropic-auth-url',
   antigravity: 'antigravity-auth-url',
+  grok: 'xai-auth-url',
+  kimi: 'kimi-auth-url',
 }
 
 export interface CLIProxyConnection {
@@ -59,6 +64,16 @@ interface AuthFilesResponse {
 interface OAuthStartResponse {
   readonly url?: unknown
   readonly state?: unknown
+  readonly user_code?: unknown
+  readonly flow?: unknown
+  readonly expires_in?: unknown
+}
+
+export interface CLIProxyOAuthSession {
+  readonly url: string
+  readonly state: string
+  readonly userCode?: string
+  readonly timeoutMs: number
 }
 
 interface OAuthStatusResponse {
@@ -118,7 +133,7 @@ export async function startCLIProxy(): Promise<CLIProxyHandle> {
 export async function beginCLIProxyOAuth(
   handle: CLIProxyHandle,
   provider: SubscriptionProviderId,
-): Promise<{ readonly url: string; readonly state: string }> {
+): Promise<CLIProxyOAuthSession> {
   const response = await managementRequest<OAuthStartResponse>(
     handle,
     `/${AUTH_ENDPOINTS[provider]}?is_webui=true`,
@@ -126,11 +141,26 @@ export async function beginCLIProxyOAuth(
   if (typeof response.url !== 'string' || typeof response.state !== 'string') {
     throw new Error('CLIProxyAPI returned an invalid OAuth session')
   }
-  return { url: response.url, state: response.state }
+  const userCode = stringValue(response.user_code)
+  const flow = stringValue(response.flow).toLowerCase()
+  const expiresIn = typeof response.expires_in === 'number' ? response.expires_in : 0
+  const device = Boolean(userCode) || flow === 'device'
+  return {
+    url: response.url,
+    state: response.state,
+    ...(userCode ? { userCode } : {}),
+    timeoutMs: expiresIn > 0
+      ? expiresIn * 1000
+      : device ? DEVICE_OAUTH_TIMEOUT_MS : OAUTH_TIMEOUT_MS,
+  }
 }
 
-export async function waitForCLIProxyOAuth(handle: CLIProxyHandle, state: string): Promise<void> {
-  const deadline = Date.now() + OAUTH_TIMEOUT_MS
+export async function waitForCLIProxyOAuth(
+  handle: CLIProxyHandle,
+  state: string,
+  timeoutMs = OAUTH_TIMEOUT_MS,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     await delay(1000)
     const response = await managementRequest<OAuthStatusResponse>(

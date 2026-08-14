@@ -190,8 +190,15 @@ async function connectSubscription(provider: SubscriptionProviderId): Promise<vo
   presentSubscriptionDemo()
   try {
     const session = await beginCLIProxyOAuth(cliProxy, provider)
+    if (session.userCode) {
+      subscriptionDemoState = setSubscriptionProviderState(subscriptionDemoState, provider, {
+        status: 'connecting',
+        code: session.userCode,
+      })
+      presentSubscriptionDemo()
+    }
     await shell.openExternal(session.url)
-    await waitForCLIProxyOAuth(cliProxy, session.state)
+    await waitForCLIProxyOAuth(cliProxy, session.state, session.timeoutMs)
     await refreshSubscriptionConnections()
   } catch (err) {
     subscriptionDemoState = setSubscriptionProviderState(subscriptionDemoState, provider, {
