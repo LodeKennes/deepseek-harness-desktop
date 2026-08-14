@@ -1,17 +1,7 @@
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { UI_FONT_FAMILY, uiFontFace } from './ui-font.js'
 import { windowChromePageCss, windowControlButtonsHtml } from './window-frame.js'
 
 export const SUBSCRIPTION_DEMO_URL = 'https://dsh-desktop.invalid/subscriptions'
-
-function uiFontFace(): string {
-  try {
-    const font = readFileSync(fileURLToPath(new URL('../styling/fonts/inter-latin-variable.woff2', import.meta.url)))
-    return `@font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;src:url(data:font/woff2;base64,${font.toString('base64')}) format('woff2')}`
-  } catch {
-    return ''
-  }
-}
 
 export const subscriptionProviderIds = ['codex', 'claude', 'antigravity'] as const
 
@@ -206,7 +196,7 @@ export function renderSubscriptionDemo(
       background:
         repeating-linear-gradient(90deg, color-mix(in oklab, var(--text) 8%, transparent) 0 1px, transparent 1px 48px),
         var(--bg);
-      font-family: Inter, system-ui, sans-serif;
+      font-family: ${UI_FONT_FAMILY};
       line-height: 1.5;
     }
     a { color: inherit; }

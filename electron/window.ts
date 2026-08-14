@@ -6,6 +6,7 @@ import {
   type SubscriptionDemoAction,
   type SubscriptionDemoState,
 } from './subscription-demo.js'
+import { UI_FONT_FAMILY, uiFontFace } from './ui-font.js'
 import {
   windowChromePageCss,
   windowControlButtonsHtml,
@@ -185,8 +186,9 @@ function renderShellHtml(opts: ErrorPageOptions & { restart: boolean }): string 
     @media (prefers-color-scheme: dark) {
       :root { --ink: #E2E9E4; --paper: #1C1F1A; --pen: #E55A4E; }
     }
+    ${uiFontFace()}
     ${windowChromePageCss()}
-    body { font-family: Inter, system-ui, sans-serif; margin: 0; padding: 48px 32px; line-height: 1.45;
+    body { font-family: ${UI_FONT_FAMILY}; margin: 0; padding: 48px 32px; line-height: 1.45;
            color: var(--ink); background: var(--paper); }
     main { max-width: 720px; margin: 0 auto; }
     h1 { font-size: 1.4rem; margin: 0 0 12px; }

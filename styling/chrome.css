@@ -36,6 +36,7 @@ select,
 [class*="newSession"],
 [class*="bubble"],
 [class*="provider-mark"],
-[class*="ready-icon"] {
+[class*="ready-icon"],
+[class*="card"] {
   border-radius: 2px;
 }
