@@ -3,6 +3,10 @@
 !include "LogicLib.nsh"
 !include "nsDialogs.nsh"
 
+; Do not use electron-builder's INSTALL_REGISTRY_KEY: the uninstaller
+; compile does not define it, and makensis treats that warning as error.
+!define DSH_USER_PATH_REG "Software\ai.deepseek.harness.desktop"
+
 !ifndef BUILD_UNINSTALLER
   Var DshAddToPath
   Var DshAddToPathCheckbox
@@ -32,7 +36,7 @@
     Push $0
     Push $1
     StrCpy $1 "$INSTDIR\resources\harness\bin"
-    ReadRegStr $0 HKCU "${INSTALL_REGISTRY_KEY}" DshUserPath
+    ReadRegStr $0 HKCU "${DSH_USER_PATH_REG}" DshUserPath
     ${If} $0 == ""
       ReadRegStr $0 HKCU "Environment" "Path"
       ${If} $0 == ""
@@ -40,7 +44,7 @@
       ${Else}
         WriteRegExpandStr HKCU "Environment" "Path" "$0;$1"
       ${EndIf}
-      WriteRegStr HKCU "${INSTALL_REGISTRY_KEY}" DshUserPath "$1"
+      WriteRegStr HKCU "${DSH_USER_PATH_REG}" DshUserPath "$1"
       SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment" /TIMEOUT=5000
     ${EndIf}
     Pop $1
@@ -56,7 +60,7 @@
     Push $5
     Push $6
 
-    ReadRegStr $1 HKCU "${INSTALL_REGISTRY_KEY}" DshUserPath
+    ReadRegStr $1 HKCU "${DSH_USER_PATH_REG}" DshUserPath
     ${If} $1 == ""
       Goto dsh_un_done
     ${EndIf}
@@ -95,7 +99,7 @@
       ${Else}
         WriteRegExpandStr HKCU "Environment" "Path" "$2"
       ${EndIf}
-      DeleteRegValue HKCU "${INSTALL_REGISTRY_KEY}" DshUserPath
+      DeleteRegValue HKCU "${DSH_USER_PATH_REG}" DshUserPath
       SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment" /TIMEOUT=5000
 
     dsh_un_done:
@@ -109,6 +113,7 @@
   FunctionEnd
 !endif
 
+!ifndef BUILD_UNINSTALLER
 !macro customInit
   StrCpy $DshAddToPath "0"
 !macroend
@@ -122,6 +127,7 @@
     Call AddDshToUserPath
   ${EndIf}
 !macroend
+!endif
 
 !macro customUnInstall
   Call un.RemoveDshFromUserPath
