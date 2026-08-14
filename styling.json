@@ -1,36 +1,41 @@
 {
-  "productName": "DeepSeek Harness",
-  "productNameSafe": "DeepSeek-Harness",
-  "desktopName": "deepseek-harness",
+  "productName": "Inkline",
+  "productNameSafe": "Inkline",
+  "desktopName": "inkline",
   "appId": "ai.deepseek.harness.desktop",
-  "bootWordmark": "HARNESS",
+  "bootWordmark": "INKLINE",
+  "assets": {
+    "wordmark": "styling/wordmark.svg",
+    "logo": "styling/logo.svg",
+    "favicon": "styling/favicon.svg"
+  },
   "colors": {
     "brandPrimary": {
-      "light": "rgb(15, 17, 21)",
-      "dark": "rgb(249, 250, 251)"
+      "light": "#111613",
+      "dark": "#E2E9E4"
     },
     "sidebarFill": {
-      "light": "rgb(249, 250, 251)",
-      "dark": "rgb(27, 27, 28)"
+      "light": "#E8EDE6",
+      "dark": "#1C1F1A"
     },
     "bubble": {
-      "light": "rgb(237, 243, 254)",
-      "dark": "rgb(44, 44, 46)"
+      "light": "#D7DFD5",
+      "dark": "#10150F"
     },
     "sidebarActiveAccent": {
-      "light": "rgb(228, 237, 253)",
-      "dark": "rgb(65, 118, 230)"
+      "light": "#35685F",
+      "dark": "#699C92"
     }
   },
   "welcome": {
     "en": {
-      "title": "Welcome",
-      "body": "DeepSeek Harness is a desktop build of the DeepSeek Harness agent. Connect a subscription to start, or skip and add an API provider later under Settings → Models.",
+      "title": "Welcome to Inkline",
+      "body": "Inkline is a desktop agent. Connect a subscription to start, or skip and add an API provider later under Settings → Models.",
       "continueLabel": "Continue"
     },
     "zh": {
-      "title": "欢迎",
-      "body": "DeepSeek Harness 是 DeepSeek Harness 智能体的桌面版。连接订阅即可开始，或稍后在 设置 → 模型 中添加 API 提供方。",
+      "title": "欢迎使用 Inkline",
+      "body": "Inkline 是一款桌面智能体。连接订阅即可开始，或稍后在 设置 → 模型 中添加 API 提供方。",
       "continueLabel": "继续"
     }
   }
