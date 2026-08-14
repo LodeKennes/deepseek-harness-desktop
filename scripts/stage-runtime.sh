@@ -386,6 +386,19 @@ if [ ! -f "$manifest" ]; then
   exit 1
 fi
 
+# Direct deps first (legacy hoist), then walk every staged manifest's
+# dependencies + peerDependencies until the closure is closed. Peers like
+# @deepseek-ai/cordis-plugin-group are required at runtime but not listed
+# on @deepseek-ai/dsh itself.
+find_dep_source() {
+  local name=$1
+  if [ -e "$clone/apps/cli/node_modules/$name" ]; then
+    printf '%s\n' "$clone/apps/cli/node_modules/$name"
+  elif [ -e "$clone/node_modules/$name" ]; then
+    printf '%s\n' "$clone/node_modules/$name"
+  fi
+}
+
 restored=
 missing=
 while IFS= read -r name; do
@@ -394,18 +407,42 @@ while IFS= read -r name; do
   if [ -e "$dest" ]; then
     continue
   fi
-  source=
-  if [ -e "$clone/apps/cli/node_modules/$name" ]; then
-    source="$clone/apps/cli/node_modules/$name"
-  elif [ -e "$clone/node_modules/$name" ]; then
-    source="$clone/node_modules/$name"
-  else
+  source=$(find_dep_source "$name" || true)
+  if [ -z "$source" ]; then
     missing="${missing}${missing:+ }$name"
     continue
   fi
   copy_package "$source" "$dest"
   restored="${restored}${restored:+ }$name"
 done < <(jq -r '.dependencies // {} | keys[]' "$manifest")
+
+pass=0
+while [ "$pass" -lt 20 ]; do
+  pass=$((pass + 1))
+  added=
+  while IFS= read -r mf; do
+    [ -f "$mf" ] || continue
+    while IFS= read -r name; do
+      [ -n "$name" ] || continue
+      dest="$stage/node_modules/$name"
+      if [ -e "$dest" ]; then
+        continue
+      fi
+      source=$(find_dep_source "$name" || true)
+      if [ -z "$source" ]; then
+        if jq -e --arg n "$name" '.peerDependenciesMeta[$n].optional == true' "$mf" >/dev/null 2>&1; then
+          continue
+        fi
+        missing="${missing}${missing:+ }$name"
+        continue
+      fi
+      copy_package "$source" "$dest"
+      restored="${restored}${restored:+ }$name"
+      added=1
+    done < <(jq -r '(.dependencies // {}), (.peerDependencies // {}) | keys[]' "$mf")
+  done < <(find "$stage" \( -path "$stage/node_modules/.bin" -o -path "$stage/node_modules/.pnpm" \) -prune -o -name package.json -print)
+  [ -n "$added" ] || break
+done
 
 if [ -n "$missing" ]; then
   echo "error: staged dependencies remain missing: $missing" >&2
