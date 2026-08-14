@@ -1,12 +1,15 @@
 export const SUBSCRIPTION_DEMO_URL = 'https://dsh-desktop.invalid/subscriptions'
 
-export const subscriptionProviderIds = ['codex', 'claude', 'gemini'] as const
+export const subscriptionProviderIds = ['codex', 'claude', 'antigravity'] as const
 
 export type SubscriptionProviderId = (typeof subscriptionProviderIds)[number]
-export type SubscriptionStatus = 'disconnected' | 'connecting' | 'connected'
+export type SubscriptionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
 
 export interface SubscriptionDemoState {
   readonly statuses: Readonly<Record<SubscriptionProviderId, SubscriptionStatus>>
+  readonly accounts: Readonly<Partial<Record<SubscriptionProviderId, string>>>
+  readonly models: Readonly<Partial<Record<SubscriptionProviderId, readonly string[]>>>
+  readonly errors: Readonly<Partial<Record<SubscriptionProviderId, string>>>
 }
 
 export type SubscriptionDemoAction =
@@ -20,7 +23,6 @@ interface ProviderDefinition {
   readonly name: string
   readonly account: string
   readonly description: string
-  readonly models: readonly string[]
 }
 
 const providers: readonly ProviderDefinition[] = [
@@ -30,7 +32,6 @@ const providers: readonly ProviderDefinition[] = [
     name: 'ChatGPT / Codex',
     account: 'OpenAI account',
     description: 'Use models made available through your eligible ChatGPT or Codex subscription.',
-    models: ['Codex models', 'Reasoning models'],
   },
   {
     id: 'claude',
@@ -38,15 +39,13 @@ const providers: readonly ProviderDefinition[] = [
     name: 'Claude',
     account: 'Anthropic account',
     description: 'Connect an eligible Claude subscription and discover its available coding models.',
-    models: ['Claude coding models'],
   },
   {
-    id: 'gemini',
+    id: 'antigravity',
     mark: 'G',
-    name: 'Gemini',
+    name: 'Google Antigravity',
     account: 'Google account',
-    description: 'Connect an eligible Gemini subscription and use the models returned for your account.',
-    models: ['Gemini coding models'],
+    description: 'Connect Antigravity and use the Gemini models CLIProxyAPI discovers for your account.',
   },
 ]
 
@@ -55,8 +54,11 @@ export function createSubscriptionDemoState(): SubscriptionDemoState {
     statuses: {
       codex: 'disconnected',
       claude: 'disconnected',
-      gemini: 'disconnected',
+      antigravity: 'disconnected',
     },
+    accounts: {},
+    models: {},
+    errors: {},
   }
 }
 
@@ -65,11 +67,36 @@ export function setSubscriptionStatus(
   provider: SubscriptionProviderId,
   status: SubscriptionStatus,
 ): SubscriptionDemoState {
+  return setSubscriptionProviderState(state, provider, { status })
+}
+
+export function setSubscriptionProviderState(
+  state: SubscriptionDemoState,
+  provider: SubscriptionProviderId,
+  next: {
+    readonly status: SubscriptionStatus
+    readonly account?: string
+    readonly models?: readonly string[]
+    readonly error?: string
+  },
+): SubscriptionDemoState {
+  const accounts = { ...state.accounts }
+  const models = { ...state.models }
+  const errors = { ...state.errors }
+  if (next.account) accounts[provider] = next.account
+  else delete accounts[provider]
+  if (next.models && next.models.length > 0) models[provider] = next.models
+  else delete models[provider]
+  if (next.error) errors[provider] = next.error
+  else delete errors[provider]
   return {
     statuses: {
       ...state.statuses,
-      [provider]: status,
+      [provider]: next.status,
     },
+    accounts,
+    models,
+    errors,
   }
 }
 
@@ -212,7 +239,9 @@ export function renderSubscriptionDemo(state: SubscriptionDemoState): string {
     }
     .connected .status { color: var(--success); background: var(--success-soft); }
     .connecting .status { color: var(--progress); background: var(--progress-soft); }
+    .error .status { color: #b91c1c; background: #fef2f2; }
     .description { min-height: 56px; margin: 9px 0 11px; color: var(--muted); font-size: 12px; }
+    .provider-error { margin: -4px 0 10px; color: #b91c1c; font-size: 11px; }
     .models { display: flex; flex-wrap: wrap; gap: 6px; margin: -3px 0 10px; padding: 0; list-style: none; }
     .model { padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--success) 32%, var(--border)); border-radius: 6px; color: var(--success); font-size: 10px; }
     .action {
@@ -249,7 +278,7 @@ export function renderSubscriptionDemo(state: SubscriptionDemoState): string {
   <div class="shell">
     <header class="topbar">
       <div class="brand"><span class="brand-mark" aria-hidden="true">D</span>DeepSeek Harness</div>
-      <span class="demo-badge">Interaction demo</span>
+      <span class="demo-badge">Functional demo</span>
     </header>
     <main>
       <section class="intro" aria-labelledby="page-title">
@@ -265,15 +294,21 @@ export function renderSubscriptionDemo(state: SubscriptionDemoState): string {
       <section class="content" aria-labelledby="providers-title">
         <div class="section-heading">
           <h2 id="providers-title">Choose a provider</h2>
-          <p>Connections are simulated in this demo.</p>
+          <p>Your system browser handles provider sign-in.</p>
         </div>
         <ul class="providers">
-          ${providers.map((provider) => renderProvider(provider, state.statuses[provider.id])).join('')}
+          ${providers.map((provider) => renderProvider(
+            provider,
+            state.statuses[provider.id],
+            state.accounts[provider.id],
+            state.models[provider.id] ?? [],
+            state.errors[provider.id],
+          )).join('')}
         </ul>
         ${modelSummary}
       </section>
       <footer>
-        <p class="footnote">Production sign-in would be handled by a separately supervised local connector. This prototype stores no credentials and contacts no provider.</p>
+        <p class="footnote">Powered locally by the bundled CLIProxyAPI. Provider credentials are stored in its private desktop data directory and never sent to Harness.</p>
         <nav class="footer-actions" aria-label="Setup actions">
           <a class="secondary" href="${actionUrl('continue')}">Skip for now</a>
           <a class="primary" href="${actionUrl('continue')}">${primaryLabel}</a>
@@ -285,20 +320,33 @@ export function renderSubscriptionDemo(state: SubscriptionDemoState): string {
 </html>`
 }
 
-function renderProvider(provider: ProviderDefinition, status: SubscriptionStatus): string {
+function renderProvider(
+  provider: ProviderDefinition,
+  status: SubscriptionStatus,
+  account: string | undefined,
+  discoveredModels: readonly string[],
+  error: string | undefined,
+): string {
   const statusLabel = status === 'connected'
-    ? 'Connected'
+    ? account ? `Connected · ${account}` : 'Connected'
     : status === 'connecting'
       ? 'Waiting for browser sign-in'
-      : 'Not connected'
+      : status === 'error'
+        ? 'Connection failed'
+        : 'Not connected'
   const models = status === 'connected'
-    ? `<ul class="models" aria-label="Example discovered models">${provider.models.map((model) => `<li class="model">${model}</li>`).join('')}</ul>`
+    ? discoveredModels.length > 0
+      ? `<ul class="models" aria-label="Discovered models">${discoveredModels.slice(0, 3).map((model) => `<li class="model">${escapeHtml(model)}</li>`).join('')}${discoveredModels.length > 3 ? `<li class="model">+${discoveredModels.length - 3} more</li>` : ''}</ul>`
+      : '<p class="provider-error">Connected, but no models were discovered yet.</p>'
     : ''
   const action = status === 'connected'
     ? `<a class="action" href="${actionUrl('disconnect', provider.id)}">Disconnect ${provider.name}</a>`
     : status === 'connecting'
       ? '<span class="action" aria-disabled="true">Complete sign-in in browser…</span>'
       : `<a class="action" href="${actionUrl('connect', provider.id)}">Connect ${provider.name}</a>`
+  const errorDetail = status === 'error' && error
+    ? `<p class="provider-error">${escapeHtml(error)}</p>`
+    : ''
 
   return `<li>
     <article class="provider ${status}">
@@ -308,6 +356,7 @@ function renderProvider(provider: ProviderDefinition, status: SubscriptionStatus
       </div>
       <p class="status" role="status">${statusLabel}</p>
       <p class="description">${provider.description}</p>
+      ${errorDetail}
       ${models}
       ${action}
     </article>
@@ -326,4 +375,12 @@ function actionUrl(
 
 function isSubscriptionProviderId(value: string | null): value is SubscriptionProviderId {
   return value !== null && subscriptionProviderIds.some((provider) => provider === value)
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }

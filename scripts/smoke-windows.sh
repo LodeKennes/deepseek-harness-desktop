@@ -117,6 +117,7 @@ APPDATA=$(win_path "$workdir/home/AppData/Roaming")
 export LOCALAPPDATA
 LOCALAPPDATA=$(win_path "$workdir/home/AppData/Local")
 export DSH_TELEMETRY_DISABLED=1
+export DSH_DESKTOP_SKIP_ONBOARDING=1
 mkdir -p \
   "$workdir/dsh" \
   "$workdir/home/Documents" \

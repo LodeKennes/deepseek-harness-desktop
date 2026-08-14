@@ -5,6 +5,7 @@ import {
   createSubscriptionDemoState,
   parseSubscriptionDemoAction,
   renderSubscriptionDemo,
+  setSubscriptionProviderState,
   setSubscriptionStatus,
 } from './subscription-demo.js'
 
@@ -14,8 +15,8 @@ test('parses only reserved subscription demo actions and known providers', () =>
     { type: 'connect', provider: 'codex' },
   )
   assert.deepEqual(
-    parseSubscriptionDemoAction(`${SUBSCRIPTION_DEMO_URL}?action=disconnect&provider=gemini`),
-    { type: 'disconnect', provider: 'gemini' },
+    parseSubscriptionDemoAction(`${SUBSCRIPTION_DEMO_URL}?action=disconnect&provider=antigravity`),
+    { type: 'disconnect', provider: 'antigravity' },
   )
   assert.deepEqual(
     parseSubscriptionDemoAction(`${SUBSCRIPTION_DEMO_URL}?action=continue`),
@@ -44,14 +45,20 @@ test('updates one provider without mutating the previous state', () => {
 })
 
 test('renders explicit demo, security, keyboard, and connected-state cues', () => {
-  const connected = setSubscriptionStatus(createSubscriptionDemoState(), 'codex', 'connected')
+  const connected = setSubscriptionProviderState(createSubscriptionDemoState(), 'codex', {
+    status: 'connected',
+    account: 'user@example.com',
+    models: ['gpt-example-one', 'gpt-example-two'],
+  })
   const html = renderSubscriptionDemo(connected)
 
-  assert.match(html, /Interaction demo/)
-  assert.match(html, /Connections are simulated in this demo/)
+  assert.match(html, /Functional demo/)
+  assert.match(html, /system browser handles provider sign-in/)
   assert.match(html, /Content-Security-Policy/)
   assert.match(html, /Credentials stay on this device/)
   assert.match(html, /Continue to Harness/)
   assert.match(html, /Disconnect ChatGPT \/ Codex/)
+  assert.match(html, /user@example\.com/)
+  assert.match(html, /gpt-example-one/)
   assert.match(html, /:focus-visible/)
 })

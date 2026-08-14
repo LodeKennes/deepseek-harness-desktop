@@ -1,23 +1,23 @@
 # Design
 
 ## Source of truth
-- Status: Draft
+- Status: Active demo
 - Last refreshed: 2026-08-14
 - Primary product surfaces: desktop first-run subscription setup, connection management, and the embedded DeepSeek Harness web application.
-- Evidence reviewed: `README.md`, `electron/main.ts`, `electron/window.ts`, `electron/preload.ts`, `electron-builder.yml`, and the icon assets under `resources/icons/`. No prior design document, screenshots, or desktop component library exists in this repository.
+- Evidence reviewed: the desktop shell, packaged-runtime layout, and CLIProxyAPI v7.2.74 management API and release artifacts.
 
 ## Brand
 - Personality: calm, direct, privacy-conscious, and useful to developers without assuming terminal expertise.
-- Trust signals: plainly state which actions are simulated, when the system browser is used, where credentials remain, and whether a local service is running.
+- Trust signals: plainly state when the system browser is used, where credentials remain, and that a local service is running.
 - Avoid: “free API” claims, provider impersonation, terminal-first onboarding, hidden background services, excessive gradients, and marketing-heavy copy.
 
 ## Product goals
-- Goals: demonstrate an install-and-go path from an existing AI subscription to a model that is ready in Harness; make connecting, disconnecting, and skipping obvious; keep advanced plumbing out of the primary flow.
-- Non-goals: real OAuth, embedding or downloading CLIProxyAPI, storing tokens, contacting provider APIs, or finalizing the production provider architecture in this demo branch.
+- Goals: provide an install-and-go path from an existing AI subscription to a model that is ready in Harness; make connecting, disconnecting, and skipping obvious; keep advanced plumbing out of the primary flow.
+- Non-goals: an updater, a proxy dashboard, quota reporting, multiple proxy instances, or a general provider-plugin framework.
 - Success signals: a new user can identify their provider, understand that sign-in happens in a browser, see a connected state, and continue to Harness without opening a terminal.
 
 ## Personas and jobs
-- Primary personas: developers who already pay for ChatGPT/Codex, Claude, or Gemini and want to use that access in a local agent desktop application.
+- Primary personas: developers who already pay for ChatGPT/Codex, Claude, or Google Antigravity and want to use that access in a local agent desktop application.
 - User jobs: connect an existing account, verify that a usable model was found, change or remove an account, and start working.
 - Key contexts of use: first launch after installation and later account management from the application menu.
 
@@ -29,7 +29,7 @@
 ## Design principles
 - Explain the outcome before the mechanism: users choose an account provider, not a proxy implementation.
 - Progressive disclosure: keep OAuth, routing, ports, and process supervision behind clear status language.
-- Tradeoffs: this branch favors a dependency-free, reviewable interaction prototype over production persistence and real authentication.
+- Tradeoffs: this branch favors one pinned, local sidecar and its existing API over a new authentication or routing layer.
 
 ## Visual language
 - Color: neutral slate surfaces with a blue primary action, green success, amber progress, and system light/dark adaptation.
@@ -60,26 +60,25 @@
 ## Interaction states
 - Loading: a provider card changes to “Waiting for browser sign-in” and disables repeated connection actions.
 - Empty: all providers show a concise “Connect” action; the user can continue without connecting.
-- Error: production authentication errors are out of scope; existing Harness startup errors remain available after continuing.
-- Success: the provider card displays “Connected,” example discovered models, and a disconnect action.
+- Error: proxy startup and authentication failures are shown in the existing desktop error surfaces or provider card.
+- Success: the provider card displays “Connected,” discovered models, and a disconnect action.
 - Disabled: connecting actions expose an unavailable state and explanatory status copy.
-- Offline/slow network, if applicable: the mock completes locally; a production flow must add timeout, retry, and offline copy.
+- Offline/slow network, if applicable: browser sign-in times out after five minutes and reports the failure on the provider card.
 
 ## Content voice
 - Tone: concise, reassuring, and technically honest.
 - Terminology: “subscription,” “connect,” “browser sign-in,” “local,” and “model”; reserve “proxy” for advanced documentation.
-- Microcopy rules: label simulation explicitly, never imply provider endorsement, and describe the consequence of each action.
+- Microcopy rules: never imply provider endorsement and describe the consequence of each action.
 
 ## Implementation constraints
 - Framework/styling system: TypeScript and Electron only; render static, CSP-constrained HTML with no renderer JavaScript or new dependency.
 - Design-token constraints: use local CSS custom properties until the upstream Harness exposes reusable desktop tokens.
-- Performance constraints: the onboarding screen must render without starting Harness or any future proxy sidecar.
+- Performance constraints: start only the small local proxy for onboarding; defer Harness until the user continues.
 - Compatibility constraints: retain context isolation, sandboxing, disabled renderer Node integration, blocked permissions, and origin-locked Harness navigation.
 - Test/screenshot expectations: unit-test action parsing, state transitions, and security/accessibility markers; perform a fresh TypeScript build and test run before delivery.
 
 ## Open questions
-- [ ] Decide whether CLIProxyAPI is bundled, downloaded on demand, or treated as a separately installed advanced integration / product owner / affects licensing, updates, and trust copy.
 - [ ] Confirm each provider’s supported authentication and subscription terms before production implementation / product and legal / affects which connection cards can ship.
-- [ ] Define encrypted credential storage and token revocation behavior per OS / engineering and security / blocks real authentication.
+- [ ] Decide whether CLIProxyAPI's local account files need additional OS keychain protection / engineering and security / affects production hardening.
 - [ ] Choose final brand identity and whether official provider logos may be used / product and legal / affects production visuals.
 - [ ] Decide whether subscription setup is mandatory, first-run-only, or always optional / product / affects persistence and empty-state behavior.

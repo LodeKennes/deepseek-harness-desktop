@@ -1,5 +1,15 @@
 import type { ChildProcess } from 'node:child_process'
-import { app, BrowserWindow, Menu } from 'electron'
+import { app, BrowserWindow, Menu, shell } from 'electron'
+import {
+  beginCLIProxyOAuth,
+  disconnectCLIProxyProvider,
+  listCLIProxyConnections,
+  startCLIProxy,
+  waitForCLIProxyOAuth,
+  writeHarnessProxyPatch,
+  type CLIProxyConnection,
+  type CLIProxyHandle,
+} from './cliproxy.js'
 import { appendLog, formatLogLine } from './logs.js'
 import {
   SidecarError,
@@ -12,6 +22,7 @@ import {
 import { pickListenPort } from './port.js'
 import {
   createSubscriptionDemoState,
+  setSubscriptionProviderState,
   setSubscriptionStatus,
   type SubscriptionDemoAction,
   type SubscriptionDemoState,
@@ -28,12 +39,13 @@ import { ensureDefaultWorkspace, resolveDefaultWorkspace } from './workspace.js'
 
 let mainWindow: BrowserWindow | null = null
 let sidecar: SidecarHandle | null = null
+let cliProxy: CLIProxyHandle | null = null
+let cliProxyConnections: readonly CLIProxyConnection[] = []
 let quitting = false
 let starting = false
 let subscriptionDemoVisible = false
 let subscriptionDemoState: SubscriptionDemoState = createSubscriptionDemoState()
 const expectedExits = new WeakSet<ChildProcess>()
-const connectionTimers = new Map<SubscriptionProviderId, ReturnType<typeof setTimeout>>()
 
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
@@ -58,16 +70,16 @@ if (!gotTheLock) {
     if (quitting) return
     event.preventDefault()
     quitting = true
-    for (const timer of connectionTimers.values()) clearTimeout(timer)
-    connectionTimers.clear()
     void (async () => {
       try {
         if (sidecar) await stopSidecar(sidecar)
         else await stopActiveSidecar()
+        if (cliProxy) await cliProxy.stop()
       } catch (err) {
-        appendLog('main.log', formatLogLine(`sidecar stop failed: ${stringifyError(err)}`))
+        appendLog('main.log', formatLogLine(`shutdown failed: ${stringifyError(err)}`))
       } finally {
         sidecar = null
+        cliProxy = null
         app.quit()
       }
     })()
@@ -108,7 +120,27 @@ function launch(): void {
   mainWindow.on('closed', () => {
     mainWindow = null
   })
-  presentSubscriptionDemo()
+  showStatusPage(mainWindow, 'Starting local subscription connector…', 'Loading CLIProxyAPI.')
+  void startSubscriptionConnector()
+}
+
+async function startSubscriptionConnector(): Promise<void> {
+  try {
+    cliProxy = await startCLIProxy()
+    cliProxy.child.once('exit', (code, signal) => {
+      if (quitting) return
+      cliProxy = null
+      showErrorPageIfOpen(
+        'Local subscription connector stopped',
+        `CLIProxyAPI exited (code ${code ?? 'null'}, signal ${signal ?? 'null'}).`,
+      )
+    })
+    await refreshSubscriptionConnections()
+    if (process.env.DSH_DESKTOP_SKIP_ONBOARDING === '1') await continueToHarness()
+    else presentSubscriptionDemo()
+  } catch (err) {
+    showErrorPageIfOpen('Local subscription connector failed to start', stringifyError(err))
+  }
 }
 
 function presentSubscriptionDemo(): void {
@@ -123,47 +155,71 @@ function handleSubscriptionDemoAction(action: SubscriptionDemoAction): void {
     void continueToHarness()
     return
   }
+  void (action.type === 'connect'
+    ? connectSubscription(action.provider)
+    : disconnectSubscription(action.provider))
+}
 
-  const existingTimer = connectionTimers.get(action.provider)
-  if (existingTimer) {
-    clearTimeout(existingTimer)
-    connectionTimers.delete(action.provider)
-  }
-
-  if (action.type === 'disconnect') {
-    subscriptionDemoState = setSubscriptionStatus(
-      subscriptionDemoState,
-      action.provider,
-      'disconnected',
-    )
-    presentSubscriptionDemo()
-    return
-  }
-
-  subscriptionDemoState = setSubscriptionStatus(subscriptionDemoState, action.provider, 'connecting')
+async function connectSubscription(provider: SubscriptionProviderId): Promise<void> {
+  if (!cliProxy || subscriptionDemoState.statuses[provider] === 'connecting') return
+  subscriptionDemoState = setSubscriptionStatus(subscriptionDemoState, provider, 'connecting')
   presentSubscriptionDemo()
-  const timer = setTimeout(() => {
-    connectionTimers.delete(action.provider)
-    subscriptionDemoState = setSubscriptionStatus(
-      subscriptionDemoState,
-      action.provider,
-      'connected',
-    )
-    if (subscriptionDemoVisible) presentSubscriptionDemo()
-  }, 1100)
-  connectionTimers.set(action.provider, timer)
+  try {
+    const session = await beginCLIProxyOAuth(cliProxy, provider)
+    await shell.openExternal(session.url)
+    await waitForCLIProxyOAuth(cliProxy, session.state)
+    await refreshSubscriptionConnections()
+  } catch (err) {
+    subscriptionDemoState = setSubscriptionProviderState(subscriptionDemoState, provider, {
+      status: 'error',
+      error: stringifyError(err),
+    })
+  }
+  if (subscriptionDemoVisible) presentSubscriptionDemo()
+}
+
+async function disconnectSubscription(provider: SubscriptionProviderId): Promise<void> {
+  if (!cliProxy) return
+  const connection = cliProxyConnections.find((entry) => entry.provider === provider)
+  if (!connection) return
+  try {
+    await disconnectCLIProxyProvider(cliProxy, connection)
+    await refreshSubscriptionConnections()
+  } catch (err) {
+    subscriptionDemoState = setSubscriptionProviderState(subscriptionDemoState, provider, {
+      status: 'error',
+      error: stringifyError(err),
+    })
+  }
+  if (subscriptionDemoVisible) presentSubscriptionDemo()
+}
+
+async function refreshSubscriptionConnections(): Promise<void> {
+  if (!cliProxy) return
+  cliProxyConnections = await listCLIProxyConnections(cliProxy)
+  let next = createSubscriptionDemoState()
+  for (const connection of cliProxyConnections) {
+    next = setSubscriptionProviderState(next, connection.provider, {
+      status: 'connected',
+      account: connection.account,
+      models: connection.models.map((model) => model.name ?? model.id),
+    })
+  }
+  subscriptionDemoState = next
 }
 
 async function continueToHarness(): Promise<void> {
   if (quitting || starting || !mainWindow || mainWindow.isDestroyed()) return
-  if (sidecar) {
-    loadSidecar(mainWindow, sidecar.url)
-    return
-  }
 
   starting = true
   try {
-    await startSession()
+    const launchOptions = await harnessLaunchOptions()
+    if (sidecar) {
+      const previous = sidecar
+      sidecar = null
+      await stopSidecar(previous)
+    }
+    await startSession(launchOptions)
   } catch (err) {
     presentError(err)
   } finally {
@@ -171,7 +227,19 @@ async function continueToHarness(): Promise<void> {
   }
 }
 
-async function startSession(): Promise<void> {
+async function harnessLaunchOptions(): Promise<{
+  readonly patchPath?: string
+  readonly cliProxyApiKey?: string
+}> {
+  if (!cliProxy) return {}
+  const patchPath = await writeHarnessProxyPatch(cliProxy, cliProxyConnections)
+  return patchPath ? { patchPath, cliProxyApiKey: cliProxy.apiKey } : {}
+}
+
+async function startSession(options: {
+  readonly patchPath?: string
+  readonly cliProxyApiKey?: string
+} = {}): Promise<void> {
   if (!mainWindow || mainWindow.isDestroyed()) return
   showStatusPage(mainWindow, 'Starting DeepSeek Harness…', 'Waiting for the local web server.')
 
@@ -191,6 +259,10 @@ async function startSession(): Promise<void> {
     workspaceDir,
     port,
     readyTimeoutMs,
+    patchPath: options.patchPath,
+    additionalEnv: options.cliProxyApiKey
+      ? { CLIPROXY_API_KEY: options.cliProxyApiKey }
+      : undefined,
   })
   sidecar = handle
   handle.child.once('exit', (code, signal) => {
@@ -225,7 +297,7 @@ async function restart(): Promise<void> {
     } else {
       await stopActiveSidecar()
     }
-    await startSession()
+    await startSession(await harnessLaunchOptions())
   } catch (err) {
     presentError(err)
   } finally {
@@ -244,6 +316,11 @@ function presentError(err: unknown): void {
       stderr,
     })
   }
+}
+
+function showErrorPageIfOpen(title: string, detail: string): void {
+  appendLog('main.log', formatLogLine(`error ${detail}`))
+  if (mainWindow && !mainWindow.isDestroyed()) showErrorPage(mainWindow, { title, detail })
 }
 
 function stringifyError(err: unknown): string {

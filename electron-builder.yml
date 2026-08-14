@@ -34,6 +34,10 @@ extraResources:
     filter:
       - "**/*"
       - "**/node_modules/**"
+  - from: dist/cliproxyapi
+    to: cliproxyapi
+    filter:
+      - "**/*"
 afterPack: scripts/after-pack.cjs
 
 linux:
