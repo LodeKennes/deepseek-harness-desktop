@@ -35,8 +35,10 @@ The desktop repo is a packager. Upstream source of truth is the SHA in `versions
 ```sh
 ./scripts/build-harness.sh
 ./scripts/stage-runtime.sh
-node dist/runtime/sidecar-entry.mjs web --dump-config --patch .cache/styling/brand.generated.cordis.yml
-# must list id: desktop-brand
+node dist/runtime/sidecar-entry.mjs web --dump-config \
+  --patch .cache/styling/brand.generated.cordis.yml \
+  --patch resources/desktop-capabilities.cordis.yml
+# must list id: desktop-brand and session-query-sqlite openAt: first-search
 ./scripts/smoke-sidecar.sh
 pnpm test
 ```
