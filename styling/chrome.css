@@ -6,6 +6,14 @@
   src: url("/fonts/inter-latin-variable.woff2") format("woff2");
 }
 
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin-italic-variable.woff2") format("woff2");
+}
+
 body {
   font-family: Inter, system-ui, sans-serif;
   font-weight: 400;

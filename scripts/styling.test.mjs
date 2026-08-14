@@ -74,6 +74,7 @@ test('maps friendly colors and extra tokens', () => {
 test('font overlay ships Inter and not Archivo', () => {
   const files = planFontOverlays(join(dirname(fileURLToPath(import.meta.url)), '..'))
   assert.ok(files.some((file) => file.rel.endsWith('inter-latin-variable.woff2')))
+  assert.ok(files.some((file) => file.rel.endsWith('inter-latin-italic-variable.woff2')))
   assert.equal(files.some((file) => /archivo/i.test(file.rel)), false)
 })
 
