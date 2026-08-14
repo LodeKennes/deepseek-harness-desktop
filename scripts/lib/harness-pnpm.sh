@@ -7,11 +7,11 @@
 
 # shellcheck disable=SC2154
 harness_pnpm_spec() {
-  local spec
+  local spec=""
   if [ -f "$repo_root/.cache/harness/package.json" ]; then
     spec=$(jq -r '.packageManager // empty' "$repo_root/.cache/harness/package.json")
   fi
-  if [ -z "$spec" ] || [ "$spec" = "null" ]; then
+  if [ -z "${spec}" ] || [ "$spec" = "null" ]; then
     spec="pnpm@$(jq -r .runtimes.pnpm "$repo_root/versions.json")"
   fi
   printf '%s\n' "$spec"
