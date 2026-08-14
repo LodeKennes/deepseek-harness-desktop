@@ -426,15 +426,15 @@ find_dep_source() {
     return 0
   fi
   local store_id=${name//\//+}
-  shopt -s nullglob
-  for path in "$clone/node_modules/.pnpm/${store_id}@"*/node_modules/"$name"; do
-    if [ -e "$path" ]; then
-      printf '%s\n' "$path"
-      shopt -u nullglob
+  local store_dir
+  # find, not a bash glob: Git Bash on Windows mishandles @scope+name@ver dirs.
+  if [ -d "$clone/node_modules/.pnpm" ]; then
+    store_dir=$(find "$clone/node_modules/.pnpm" -maxdepth 1 -type d -name "${store_id}@*" | head -n 1)
+    if [ -n "$store_dir" ] && [ -e "$store_dir/node_modules/$name" ]; then
+      printf '%s\n' "$store_dir/node_modules/$name"
       return 0
     fi
-  done
-  shopt -u nullglob
+  fi
 }
 
 restored=
@@ -471,7 +471,11 @@ while [ "$pass" -lt 20 ]; do
         if jq -e --arg n "$name" '.peerDependenciesMeta[$n].optional == true' "$mf" >/dev/null 2>&1; then
           continue
         fi
-        missing="${missing}${missing:+ }$name"
+        # Optional LLM SDKs (e.g. @anthropic-ai/sdk) are not required for dsh web.
+        case "$name" in
+          @deepseek-ai/*) missing="${missing}${missing:+ }$name" ;;
+          *) echo "stage-runtime: skip unrestorable $name" ;;
+        esac
         continue
       fi
       copy_package "$source" "$dest"

@@ -85,6 +85,12 @@ smoke_packaged_mac() {
     echo "error: packaged app missing extraResources harness/sidecar-entry.mjs" >&2
     exit 1
   fi
+  if [ ! -f "$app/Contents/Resources/harness/node_modules/@deepseek-ai/dsh-app-boot/package.json" ]; then
+    echo "error: packaged app missing harness/node_modules/@deepseek-ai/dsh-app-boot" >&2
+    ls -la "$app/Contents/Resources/harness" >&2 || true
+    ls -la "$app/Contents/Resources/harness/node_modules/@deepseek-ai" >&2 || true
+    exit 1
+  fi
   echo "smoke-packaged: zip has spawn-helper and staged harness"
 
   bin="$app/Contents/MacOS/DeepSeek Harness"

@@ -27,11 +27,14 @@ files:
   - "!**/.omx/**"
 
 # Staged official Node + @deepseek-ai/dsh tree. Never inside app.asar.
+# Name node_modules explicitly: extraResources FileSet omits it by default.
 extraResources:
   - from: dist/runtime
     to: harness
     filter:
       - "**/*"
+      - "**/node_modules/**"
+afterPack: scripts/after-pack.cjs
 
 linux:
   category: Development
