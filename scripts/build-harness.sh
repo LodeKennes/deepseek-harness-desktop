@@ -55,6 +55,13 @@ fi
 
 echo "build-harness: node $node_ver (pin ${expected_node}), pnpm $pnpm_ver (pin ${expected_pnpm})"
 
+# The harness tree pins packageManager pnpm@11.7.0. pnpm 11.21+ then tries
+# to download that exact @pnpm/exe.<platform> and verify it against the
+# harness lockfile. Intel macOS is not in that lockfile, so stay on the
+# already-installed major-compatible CLI.
+export npm_config_manage_package_manager_versions=false
+export npm_config_pm_on_fail=ignore
+
 "$script_dir/apply-harness-overlay.sh"
 
 cd "$dir"
