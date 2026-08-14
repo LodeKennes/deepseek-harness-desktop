@@ -26,7 +26,7 @@ concurrency:
 jobs:
   verify:
     name: verify tag
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       version: ${{ steps.check.outputs.version }}
@@ -42,7 +42,7 @@ jobs:
           exit 1
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Match tag to versions.json
         id: check
@@ -93,14 +93,14 @@ jobs:
   release:
     name: publish GitHub Release
     needs: [verify, build]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: write
       actions: read
     steps:
       - name: Download rebuilt artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: release-assets
           merge-multiple: true
