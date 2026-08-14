@@ -97,13 +97,14 @@ exe=$(find "$workdir/app" -maxdepth 2 -name 'DeepSeek Harness.exe' -print -quit 
 node_exe=$(find "$workdir/app" -path '*/resources/harness/node/node.exe' -print -quit || true)
 entry=$(find "$workdir/app" -path '*/resources/harness/sidecar-entry.mjs' -print -quit || true)
 dsh_cmd=$(find "$workdir/app" -path '*/resources/harness/bin/dsh.cmd' -print -quit || true)
+boot=$(find "$workdir/app" -path '*/resources/harness/node_modules/@deepseek-ai/dsh-app-boot/package.json' -print -quit || true)
 
-if [ -z "$exe" ] || [ -z "$node_exe" ] || [ -z "$entry" ] || [ -z "$dsh_cmd" ]; then
-  echo "error: portable zip missing exe / node.exe / sidecar-entry.mjs / dsh.cmd" >&2
+if [ -z "$exe" ] || [ -z "$node_exe" ] || [ -z "$entry" ] || [ -z "$dsh_cmd" ] || [ -z "$boot" ]; then
+  echo "error: portable zip missing exe / node.exe / sidecar-entry.mjs / dsh.cmd / dsh-app-boot" >&2
   find "$workdir/app" -maxdepth 5 -print >&2 || true
   exit 1
 fi
-echo "smoke-windows: zip has node/node.exe, sidecar-entry.mjs, bin/dsh.cmd"
+echo "smoke-windows: zip has node/node.exe, sidecar-entry.mjs, bin/dsh.cmd, dsh-app-boot"
 
 # Isolated profile so official node.exe / Electron see Win32 paths, not MSYS.
 export DSH_HOME
