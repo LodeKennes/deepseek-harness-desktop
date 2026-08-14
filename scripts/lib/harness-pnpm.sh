@@ -1,11 +1,11 @@
 # shellcheck shell=bash
-# Drive the harness clone with a JS pnpm that matches its packageManager
-# field. CI's standalone pnpm 11.21 tries to download that pin's
-# @pnpm/exe.darwin-x64 and verify it against the harness lockfile; Intel
-# macOS is not recorded there. --pm-on-fail=ignore skips the version switch.
+# Put a JS pnpm (no @pnpm/exe) on PATH for the harness clone.
+# CI's standalone 11.21 fails on Intel macOS: the harness lockfile has no
+# @pnpm/exe.darwin-x64, and npm scripts call `pnpm` from PATH (build:web).
 #
 # Requires: repo_root, jq, node, npm.
 
+# shellcheck disable=SC2154
 harness_pnpm_spec() {
   local spec
   if [ -f "$repo_root/.cache/harness/package.json" ]; then
@@ -17,7 +17,7 @@ harness_pnpm_spec() {
   printf '%s\n' "$spec"
 }
 
-harness_pnpm() {
+ensure_harness_pnpm() {
   local spec ver prefix bin
   spec=$(harness_pnpm_spec)
   ver=${spec#pnpm@}
@@ -32,5 +32,26 @@ harness_pnpm() {
     echo "error: JS $spec missing at $bin" >&2
     exit 1
   fi
-  node "$bin" --pm-on-fail=ignore "$@"
+  mkdir -p "$prefix/bin"
+  cat >"$prefix/bin/pnpm" <<EOF
+#!/bin/sh
+exec node $(printf '%q' "$bin") --pm-on-fail=ignore "\$@"
+EOF
+  cat >"$prefix/bin/pnpx" <<EOF
+#!/bin/sh
+exec node $(printf '%q' "${bin%pnpm.mjs}pnpx.mjs") --pm-on-fail=ignore "\$@"
+EOF
+  chmod 755 "$prefix/bin/pnpm" "$prefix/bin/pnpx"
+  case ":$PATH:" in
+    *":$prefix/bin:"*) ;;
+    *) PATH="$prefix/bin:$PATH" ;;
+  esac
+  export PATH
+  hash -r 2>/dev/null || true
+  echo "harness-pnpm: using $(command -v pnpm) ($spec)"
+}
+
+harness_pnpm() {
+  ensure_harness_pnpm
+  pnpm "$@"
 }

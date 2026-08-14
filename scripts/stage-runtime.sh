@@ -399,11 +399,11 @@ fi
 echo "stage-runtime: deploying @deepseek-ai/dsh → $stage"
 rm -rf "$stage"
 mkdir -p "$(dirname "$stage")"
-printf 'pm-on-fail=ignore\n' >"$clone/.npmrc"
+ensure_harness_pnpm
 
 (
   cd "$clone"
-  harness_pnpm --filter @deepseek-ai/dsh deploy \
+  pnpm --filter @deepseek-ai/dsh deploy \
     --legacy --prod \
     --config.node-linker=hoisted \
     --config.auto-install-peers=false \
