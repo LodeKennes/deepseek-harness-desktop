@@ -103,6 +103,7 @@ smoke_packaged_mac() {
   export HOME="$workdir/home"
   export DSH_HOME="$workdir/dsh"
   export DSH_TELEMETRY_DISABLED=1
+  export DSH_DESKTOP_SKIP_ONBOARDING=1
   mkdir -p "$HOME" "$DSH_HOME"
 
   # macos-latest has a window server; skip xvfb. Unsigned local .app is not quarantined.
@@ -311,6 +312,7 @@ need_cmd xvfb-run
 export HOME="$workdir/home"
 export DSH_HOME="$workdir/dsh"
 export DSH_TELEMETRY_DISABLED=1
+export DSH_DESKTOP_SKIP_ONBOARDING=1
 mkdir -p "$HOME" "$DSH_HOME"
 
 # First heal can exceed 60s.

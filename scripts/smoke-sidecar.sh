@@ -59,6 +59,8 @@ quit_timeout=${SMOKE_QUIT_TIMEOUT:-10}
 
 workdir=$(mktemp -d)
 dsh_home=$(mktemp -d)
+patch="$workdir/smoke.cordis.yml"
+printf '[]\n' > "$patch"
 pid=
 fifo_fd_open=0
 
@@ -95,7 +97,8 @@ if is_windows; then
   echo "smoke-sidecar: windows quit-pipe via node helper port=$port entry=$entry"
   SMOKE_NODE=$(win_path "$node_bin")
   SMOKE_ENTRY=$(win_path "$entry")
-  export SMOKE_NODE SMOKE_ENTRY SMOKE_PORT="$port"
+  SMOKE_PATCH=$(win_path "$patch")
+  export SMOKE_NODE SMOKE_ENTRY SMOKE_PATCH SMOKE_PORT="$port"
   export SMOKE_READY_TIMEOUT="$ready_timeout" SMOKE_QUIT_TIMEOUT="$quit_timeout"
   "$helper_node" --input-type=module - "$workdir" <<'JS'
 import { spawn } from 'node:child_process'
@@ -105,11 +108,12 @@ import { writeFileSync } from 'node:fs'
 const workdir = process.argv[2]
 const nodeBin = process.env.SMOKE_NODE
 const entry = process.env.SMOKE_ENTRY
+const patch = process.env.SMOKE_PATCH
 const port = process.env.SMOKE_PORT
 const readyMs = Number(process.env.SMOKE_READY_TIMEOUT || 180) * 1000
 const quitMs = Number(process.env.SMOKE_QUIT_TIMEOUT || 10) * 1000
 
-const child = spawn(nodeBin, [entry, 'web', '--host', '127.0.0.1', '--port', port], {
+const child = spawn(nodeBin, [entry, 'web', '--patch', patch, '--host', '127.0.0.1', '--port', port], {
   stdio: ['pipe', 'pipe', 'pipe'],
   windowsHide: true,
   env: process.env,
@@ -198,7 +202,7 @@ fi
 
 mkfifo "$workdir/in"
 # Reader (sidecar stdin) is opened by the child; open the writer after spawn.
-"$node_bin" "$entry" web --host 127.0.0.1 --port "$port" \
+"$node_bin" "$entry" web --patch "$patch" --host 127.0.0.1 --port "$port" \
   <"$workdir/in" >"$workdir/out" 2>"$workdir/err" &
 pid=$!
 exec 3>"$workdir/in"

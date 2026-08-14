@@ -4,6 +4,24 @@
 
 Thin standalone packaging repository for **DeepSeek Harness** desktop installers.
 
+## Subscription onboarding demo
+
+The `demo/subscription-onboarding` branch is a working, intentionally small
+integration with [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
+The app starts a bundled local proxy, opens the provider's real browser sign-in,
+discovers the available models, and configures Harness to use them. It supports
+ChatGPT/Codex, Claude, and Google Antigravity accounts.
+
+CLIProxyAPI listens only on localhost. Its account files are kept under
+`~/.dsh/desktop/cliproxyapi/auth`; they are not sent to this desktop project.
+The connection screen can be reopened from
+**Subscriptions → Manage subscriptions…**.
+
+For a source checkout, run `./scripts/stage-runtime.sh`,
+`./scripts/stage-cliproxyapi.sh`, and then `pnpm start`. Packaged demo builds
+already contain both runtimes. See [`DESIGN.md`](DESIGN.md) for the deliberately
+limited scope and remaining production questions.
+
 This repo does **not** contain the harness source, a git submodule, or vendored packages. CI (and local development) clones a pinned revision of [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness) and builds installers from that SHA. The pin lives in [`versions.json`](versions.json).
 
 End users do not need Node.js, pnpm, Python, or a C++ toolchain for the primary installers. Installed size is ~0.5 GB.
@@ -20,6 +38,7 @@ End users do not need Node.js, pnpm, Python, or a C++ toolchain for the primary 
 | --- | --- |
 | Desktop base | `0.1.0` (`ai.deepseek.harness.desktop`) |
 | Harness | `0.1.0-rc.5` at `47f943859bef60e4160492346772ded9b24f765a` |
+| CLIProxyAPI | `7.2.74` |
 
 A push to `master` automatically becomes `0.1.0-N`, where `N` increments
 within that base version. The successful release workflow creates the matching
@@ -29,4 +48,5 @@ This repo is not a source of truth for the harness.
 
 ## License
 
-MIT. The upstream harness is also MIT (DeepSeek).
+MIT. The upstream Harness and the bundled CLIProxyAPI binary are also MIT; their
+license files are included in packaged builds.

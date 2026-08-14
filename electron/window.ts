@@ -1,11 +1,22 @@
 import { BrowserWindow, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
+import {
+  parseSubscriptionDemoAction,
+  renderSubscriptionDemo,
+  type SubscriptionDemoAction,
+  type SubscriptionDemoState,
+} from './subscription-demo.js'
 
 // Reserved .invalid host so Restart is a normal https navigation we intercept.
 export const RESTART_URL = 'https://dsh-desktop.invalid/restart'
 
 const origins = new WeakMap<BrowserWindow, string>()
-const restartHooks = new WeakMap<BrowserWindow, () => void>()
+const windowHooks = new WeakMap<BrowserWindow, MainWindowHooks>()
+
+export interface MainWindowHooks {
+  readonly onRestart: () => void
+  readonly onSubscriptionDemoAction: (action: SubscriptionDemoAction) => void
+}
 
 export interface ErrorPageOptions {
   title: string
@@ -13,7 +24,7 @@ export interface ErrorPageOptions {
   stderr?: readonly string[]
 }
 
-export function createMainWindow(hooks: { onRestart: () => void }): BrowserWindow {
+export function createMainWindow(hooks: MainWindowHooks): BrowserWindow {
   const preload = fileURLToPath(new URL('./preload.js', import.meta.url))
   const win = new BrowserWindow({
     title: 'DeepSeek Harness',
@@ -31,7 +42,7 @@ export function createMainWindow(hooks: { onRestart: () => void }): BrowserWindo
     },
   })
 
-  restartHooks.set(win, hooks.onRestart)
+  windowHooks.set(win, hooks)
   attachNavigationLock(win)
   win.once('ready-to-show', () => {
     if (!win.isDestroyed()) win.show()
@@ -59,6 +70,11 @@ export function showErrorPage(win: BrowserWindow, opts: ErrorPageOptions): void 
   void win.loadURL(toDataUrl(renderShellHtml({ ...opts, restart: true })))
 }
 
+export function showSubscriptionDemo(win: BrowserWindow, state: SubscriptionDemoState): void {
+  setSidecarOrigin(win, undefined)
+  void win.loadURL(toDataUrl(renderSubscriptionDemo(state)))
+}
+
 function attachNavigationLock(win: BrowserWindow): void {
   win.webContents.session.setPermissionRequestHandler((_wc, _permission, callback) => {
     callback(false)
@@ -70,6 +86,12 @@ function attachNavigationLock(win: BrowserWindow): void {
   })
 
   const onNavigate = (event: Electron.Event & { url: string }) => {
+    const subscriptionAction = parseSubscriptionDemoAction(event.url)
+    if (subscriptionAction) {
+      event.preventDefault()
+      windowHooks.get(win)?.onSubscriptionDemoAction(subscriptionAction)
+      return
+    }
     if (handleRestartUrl(win, event.url)) {
       event.preventDefault()
       return
@@ -88,7 +110,7 @@ function handleRestartUrl(win: BrowserWindow, url: string): boolean {
   if (url !== RESTART_URL && !url.startsWith(`${RESTART_URL}?`) && !url.startsWith(`${RESTART_URL}#`)) {
     return false
   }
-  restartHooks.get(win)?.()
+  windowHooks.get(win)?.onRestart()
   return true
 }
 

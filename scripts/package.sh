@@ -148,6 +148,8 @@ if [ ! -e node_modules/.bin/electron-builder ] && [ ! -e node_modules/.bin/elect
   exit 1
 fi
 
+"$script_dir/stage-cliproxyapi.sh"
+
 echo "package: compiling Electron shell"
 pnpm exec tsc
 

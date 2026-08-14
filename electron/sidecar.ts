@@ -66,6 +66,8 @@ export async function startSidecar(opts: {
   workspaceDir: string
   port: number
   readyTimeoutMs?: number
+  patchPath?: string
+  additionalEnv?: NodeJS.ProcessEnv
 }): Promise<SidecarHandle> {
   const node =
     process.platform === 'win32'
@@ -79,8 +81,20 @@ export async function startSidecar(opts: {
   }
 
   const spawnHelperPath = resolveSpawnHelperPath(opts.harnessRoot)
-  const env = buildSidecarEnv({ harnessRoot: opts.harnessRoot, spawnHelperPath })
-  const argv = [entry, 'web', '--host', '127.0.0.1', '--port', String(opts.port)]
+  const env = buildSidecarEnv({
+    harnessRoot: opts.harnessRoot,
+    spawnHelperPath,
+    source: { ...process.env, ...opts.additionalEnv },
+  })
+  const argv = [
+    entry,
+    'web',
+    ...(opts.patchPath ? ['--patch', opts.patchPath] : []),
+    '--host',
+    '127.0.0.1',
+    '--port',
+    String(opts.port),
+  ]
   appendLog(
     'main.log',
     formatLogLine(`spawn ${node} ${argv.join(' ')} cwd=${opts.workspaceDir} port=${opts.port}`),
