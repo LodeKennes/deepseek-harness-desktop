@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Desktop installers for DeepSeek Harness with local subscription connectivity",
+  "description": "Desktop installers for DeepSeek Harness — a local coding agent with browser subscription sign-in",
   "author": "Lode Kennes <lode@lodekennes.com>",
   "homepage": "https://github.com/LodeKennes/deepseek-harness-desktop",
   "repository": {
