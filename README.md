@@ -4,6 +4,18 @@
 
 Thin standalone packaging repository for **DeepSeek Harness** desktop installers.
 
+## Subscription onboarding demo
+
+The `demo/subscription-onboarding` branch contains an interaction prototype for
+connecting an existing ChatGPT/Codex, Claude, or Gemini subscription entirely
+through the desktop UI. Provider sign-in and model discovery are intentionally
+simulated: the demo stores no credentials and contacts no provider.
+
+Run `pnpm start`, choose a provider, and then continue into the staged Harness.
+The screen can be reopened from **Subscriptions → Manage subscriptions…**.
+See [`DESIGN.md`](DESIGN.md) for the product decisions and production questions
+that this prototype is meant to test.
+
 This repo does **not** contain the harness source, a git submodule, or vendored packages. CI (and local development) clones a pinned revision of [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness) and builds installers from that SHA. The pin lives in [`versions.json`](versions.json).
 
 End users do not need Node.js, pnpm, Python, or a C++ toolchain for the primary installers. Installed size is ~0.5 GB.

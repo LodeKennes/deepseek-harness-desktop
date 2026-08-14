@@ -10,14 +10,30 @@ import {
   type SidecarHandle,
 } from './sidecar.js'
 import { pickListenPort } from './port.js'
-import { createMainWindow, loadSidecar, showErrorPage, showStatusPage } from './window.js'
+import {
+  createSubscriptionDemoState,
+  setSubscriptionStatus,
+  type SubscriptionDemoAction,
+  type SubscriptionDemoState,
+  type SubscriptionProviderId,
+} from './subscription-demo.js'
+import {
+  createMainWindow,
+  loadSidecar,
+  showErrorPage,
+  showStatusPage,
+  showSubscriptionDemo,
+} from './window.js'
 import { ensureDefaultWorkspace, resolveDefaultWorkspace } from './workspace.js'
 
 let mainWindow: BrowserWindow | null = null
 let sidecar: SidecarHandle | null = null
 let quitting = false
 let starting = false
+let subscriptionDemoVisible = false
+let subscriptionDemoState: SubscriptionDemoState = createSubscriptionDemoState()
 const expectedExits = new WeakSet<ChildProcess>()
+const connectionTimers = new Map<SubscriptionProviderId, ReturnType<typeof setTimeout>>()
 
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
@@ -31,7 +47,7 @@ if (!gotTheLock) {
   })
   app.whenReady().then(() => {
     installMenu()
-    void launch()
+    launch()
   })
 
   app.on('window-all-closed', () => {
@@ -42,6 +58,8 @@ if (!gotTheLock) {
     if (quitting) return
     event.preventDefault()
     quitting = true
+    for (const timer of connectionTimers.values()) clearTimeout(timer)
+    connectionTimers.clear()
     void (async () => {
       try {
         if (sidecar) await stopSidecar(sidecar)
@@ -62,6 +80,16 @@ function installMenu(): void {
     { role: 'fileMenu' },
     { role: 'editMenu' },
     { role: 'viewMenu' },
+    {
+      label: 'Subscriptions',
+      submenu: [
+        {
+          label: 'Manage subscriptions…',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => presentSubscriptionDemo(),
+        },
+      ],
+    },
     { role: 'windowMenu' },
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
@@ -72,15 +100,74 @@ async function stopSidecar(handle: SidecarHandle): Promise<void> {
   await handle.stop()
 }
 
-async function launch(): Promise<void> {
-  mainWindow = createMainWindow({ onRestart: () => void restart() })
+function launch(): void {
+  mainWindow = createMainWindow({
+    onRestart: () => void restart(),
+    onSubscriptionDemoAction: handleSubscriptionDemoAction,
+  })
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+  presentSubscriptionDemo()
+}
+
+function presentSubscriptionDemo(): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  subscriptionDemoVisible = true
+  showSubscriptionDemo(mainWindow, subscriptionDemoState)
+}
+
+function handleSubscriptionDemoAction(action: SubscriptionDemoAction): void {
+  if (action.type === 'continue') {
+    subscriptionDemoVisible = false
+    void continueToHarness()
+    return
+  }
+
+  const existingTimer = connectionTimers.get(action.provider)
+  if (existingTimer) {
+    clearTimeout(existingTimer)
+    connectionTimers.delete(action.provider)
+  }
+
+  if (action.type === 'disconnect') {
+    subscriptionDemoState = setSubscriptionStatus(
+      subscriptionDemoState,
+      action.provider,
+      'disconnected',
+    )
+    presentSubscriptionDemo()
+    return
+  }
+
+  subscriptionDemoState = setSubscriptionStatus(subscriptionDemoState, action.provider, 'connecting')
+  presentSubscriptionDemo()
+  const timer = setTimeout(() => {
+    connectionTimers.delete(action.provider)
+    subscriptionDemoState = setSubscriptionStatus(
+      subscriptionDemoState,
+      action.provider,
+      'connected',
+    )
+    if (subscriptionDemoVisible) presentSubscriptionDemo()
+  }, 1100)
+  connectionTimers.set(action.provider, timer)
+}
+
+async function continueToHarness(): Promise<void> {
+  if (quitting || starting || !mainWindow || mainWindow.isDestroyed()) return
+  if (sidecar) {
+    loadSidecar(mainWindow, sidecar.url)
+    return
+  }
+
+  starting = true
   try {
     await startSession()
   } catch (err) {
     presentError(err)
+  } finally {
+    starting = false
   }
 }
 
