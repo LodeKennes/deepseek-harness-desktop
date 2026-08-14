@@ -80,17 +80,19 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+          echo "prefix=$(jq -r .productNameSafe styling.json)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: DeepSeek-Harness-${{ steps.ver.outputs.version }}-linux-x64
+          name: ${{ steps.ver.outputs.prefix }}-${{ steps.ver.outputs.version }}-linux-x64
           path: |
-            dist/installers/DeepSeek-Harness-*-linux-amd64.deb
-            dist/installers/DeepSeek-Harness-*-linux-x86_64.AppImage
-            dist/installers/DeepSeek-Harness-*-linux-*.rpm
-            dist/installers/DeepSeek-Harness-*-linux-*.pkg.tar.zst
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-linux-amd64.deb
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-linux-x86_64.AppImage
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-linux-*.rpm
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-linux-*.pkg.tar.zst
           if-no-files-found: error
           retention-days: 14
 
@@ -134,15 +136,17 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+          echo "prefix=$(jq -r .productNameSafe styling.json)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: DeepSeek-Harness-${{ steps.ver.outputs.version }}-mac-arm64
+          name: ${{ steps.ver.outputs.prefix }}-${{ steps.ver.outputs.version }}-mac-arm64
           path: |
-            dist/installers/DeepSeek-Harness-*-mac-arm64.dmg
-            dist/installers/DeepSeek-Harness-*-mac-arm64.zip
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-mac-arm64.dmg
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-mac-arm64.zip
           if-no-files-found: error
           retention-days: 14
 
@@ -209,15 +213,17 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+          echo "prefix=$(jq -r .productNameSafe styling.json)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: DeepSeek-Harness-${{ steps.ver.outputs.version }}-win-x64
+          name: ${{ steps.ver.outputs.prefix }}-${{ steps.ver.outputs.version }}-win-x64
           path: |
-            dist/installers/DeepSeek-Harness-*-win-x64.exe
-            dist/installers/DeepSeek-Harness-*-win-x64.zip
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-win-x64.exe
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-win-x64.zip
           if-no-files-found: error
           retention-days: 14
 
@@ -268,17 +274,19 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+          echo "prefix=$(jq -r .productNameSafe styling.json)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: DeepSeek-Harness-${{ steps.ver.outputs.version }}-linux-arm64
+          name: ${{ steps.ver.outputs.prefix }}-${{ steps.ver.outputs.version }}-linux-arm64
           path: |
-            dist/installers/DeepSeek-Harness-*-linux-arm64.deb
-            dist/installers/DeepSeek-Harness-*-linux-arm64.AppImage
-            dist/installers/DeepSeek-Harness-*-linux-*.rpm
-            dist/installers/DeepSeek-Harness-*-linux-*.pkg.tar.zst
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-linux-arm64.deb
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-linux-arm64.AppImage
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-linux-*.rpm
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-linux-*.pkg.tar.zst
           if-no-files-found: error
           retention-days: 14
 
@@ -324,15 +332,17 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+          echo "prefix=$(jq -r .productNameSafe styling.json)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: DeepSeek-Harness-${{ steps.ver.outputs.version }}-mac-x64
+          name: ${{ steps.ver.outputs.prefix }}-${{ steps.ver.outputs.version }}-mac-x64
           path: |
-            dist/installers/DeepSeek-Harness-*-mac-x64.dmg
-            dist/installers/DeepSeek-Harness-*-mac-x64.zip
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-mac-x64.dmg
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-mac-x64.zip
           if-no-files-found: error
           retention-days: 14
 
@@ -402,14 +412,16 @@ jobs:
 
       - name: Desktop version
         id: ver
-        run: echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=${RELEASE_VERSION:-$(jq -r .desktop.version versions.json)}" >> "$GITHUB_OUTPUT"
+          echo "prefix=$(jq -r .productNameSafe styling.json)" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: DeepSeek-Harness-${{ steps.ver.outputs.version }}-win-arm64
+          name: ${{ steps.ver.outputs.prefix }}-${{ steps.ver.outputs.version }}-win-arm64
           path: |
-            dist/installers/DeepSeek-Harness-*-win-arm64.exe
-            dist/installers/DeepSeek-Harness-*-win-arm64.zip
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-win-arm64.exe
+            dist/installers/${{ steps.ver.outputs.prefix }}-*-win-arm64.zip
           if-no-files-found: error
           retention-days: 14

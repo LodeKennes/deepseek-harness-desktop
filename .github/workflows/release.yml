@@ -28,6 +28,7 @@ jobs:
       harness_sha: ${{ steps.release.outputs.harness_sha }}
       harness_version: ${{ steps.release.outputs.harness_version }}
       cliproxyapi_version: ${{ steps.release.outputs.cliproxyapi_version }}
+      product_name: ${{ steps.release.outputs.product_name }}
     steps:
       - name: Checkout complete tag history
         uses: actions/checkout@v7
@@ -49,6 +50,7 @@ jobs:
           harness_sha=$(jq -r .harness.sha versions.json)
           harness_version=$(jq -r .harness.version versions.json)
           cliproxyapi_version=$(jq -r .runtimes.cliProxyApi versions.json)
+          product_name=$(jq -r .productName styling.json)
 
           if [ "$base_version" != "$package_version" ]; then
             echo "error: versions.json desktop.version ($base_version) does not match package.json ($package_version)" >&2
@@ -66,6 +68,7 @@ jobs:
             echo "harness_sha=$harness_sha"
             echo "harness_version=$harness_version"
             echo "cliproxyapi_version=$cliproxyapi_version"
+            echo "product_name=$product_name"
           } >> "$GITHUB_OUTPUT"
 
   build:
@@ -113,6 +116,7 @@ jobs:
           HARNESS_SHA: ${{ needs.version.outputs.harness_sha }}
           HARNESS_VERSION: ${{ needs.version.outputs.harness_version }}
           CLIPROXYAPI_VERSION: ${{ needs.version.outputs.cliproxyapi_version }}
+          PRODUCT_NAME: ${{ needs.version.outputs.product_name }}
         run: |
           set -euo pipefail
 
@@ -143,13 +147,13 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release ${TAG} already exists; replacing assets for this commit"
             gh release edit "$TAG" \
-              --title "DeepSeek Harness ${VERSION}" \
+              --title "${PRODUCT_NAME} ${VERSION}" \
               --latest
             gh release upload "$TAG" "${files[@]}" --clobber
           else
             gh release create "$TAG" "${files[@]}" \
               --target "$TARGET_SHA" \
-              --title "DeepSeek Harness ${VERSION}" \
+              --title "${PRODUCT_NAME} ${VERSION}" \
               --notes "$notes" \
               --generate-notes \
               --latest

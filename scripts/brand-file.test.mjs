@@ -56,3 +56,10 @@ test('packaged smokes look up binaries from styling.json, not DeepSeek names', (
   assert.match(windows, /\$\{product_name_safe\}-\*-win-/)
   assert.doesNotMatch(windows, /DeepSeek Harness/)
 })
+
+test('desktop workflow uploads artifacts using styling.json productNameSafe', () => {
+  const yml = readFileSync(join(repoRoot, '.github/workflows/build-desktop.yml'), 'utf8')
+  assert.match(yml, /prefix=\$\(jq -r \.productNameSafe styling\.json\)/)
+  assert.match(yml, /steps\.ver\.outputs\.prefix/)
+  assert.doesNotMatch(yml, /DeepSeek-Harness-/)
+})
