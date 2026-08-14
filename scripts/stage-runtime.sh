@@ -392,11 +392,31 @@ fi
 # on @deepseek-ai/dsh itself.
 find_dep_source() {
   local name=$1
+  local path vendor
   if [ -e "$clone/apps/cli/node_modules/$name" ]; then
     printf '%s\n' "$clone/apps/cli/node_modules/$name"
-  elif [ -e "$clone/node_modules/$name" ]; then
-    printf '%s\n' "$clone/node_modules/$name"
+    return 0
   fi
+  if [ -e "$clone/node_modules/$name" ]; then
+    printf '%s\n' "$clone/node_modules/$name"
+    return 0
+  fi
+  for vendor in "$clone"/vendor/*; do
+    if [ -f "$vendor/package.json" ] && [ "$(jq -r .name "$vendor/package.json")" = "$name" ]; then
+      printf '%s\n' "$vendor"
+      return 0
+    fi
+  done
+  local store_id=${name//\//+}
+  shopt -s nullglob
+  for path in "$clone/node_modules/.pnpm/${store_id}@"*/node_modules/"$name"; do
+    if [ -e "$path" ]; then
+      printf '%s\n' "$path"
+      shopt -u nullglob
+      return 0
+    fi
+  done
+  shopt -u nullglob
 }
 
 restored=
