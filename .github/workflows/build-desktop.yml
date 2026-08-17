@@ -1,19 +1,19 @@
 name: Build desktop
 
 # Pull requests get an unpublished validation build. release.yml calls this
-# workflow with an immutable X.Y.Z-N version for each push to master.
+# workflow with an immutable X.Y.Z-rc.N-build-M version for each push to master.
 on:
   pull_request:
   workflow_dispatch:
     inputs:
       release_version:
-        description: Optional X.Y.Z-N artifact version for a manual build
+        description: Optional X.Y.Z-rc.N-build-M artifact version for a manual build
         required: false
         type: string
   workflow_call:
     inputs:
       release_version:
-        description: X.Y.Z-N artifact version selected by release.yml
+        description: X.Y.Z-rc.N-build-M artifact version selected by release.yml
         required: false
         type: string
 

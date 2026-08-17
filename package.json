@@ -1,7 +1,7 @@
 {
   "name": "deepseek-harness-desktop",
   "productName": "DeepSeek Harness",
-  "version": "0.1.0",
+  "version": "0.1.0-rc.7",
   "private": true,
   "type": "module",
   "description": "Desktop installers for DeepSeek Harness — a local coding agent with browser subscription sign-in",
@@ -18,7 +18,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "start": "tsc && electron .",
-    "test": "tsc && node --test out/cliproxy.test.js out/env.test.js out/patches.test.js out/sidecar.test.js out/styling.test.js out/subscription-demo.test.js out/window-frame.test.js out/workspace.test.js scripts/styling.test.mjs scripts/brand-file.test.mjs scripts/assert-desktop-brand.test.mjs && ./scripts/sync-package-indexes.test.sh",
+    "test": "tsc && node --test out/cliproxy.test.js out/env.test.js out/patches.test.js out/sidecar.test.js out/styling.test.js out/subscription-demo.test.js out/window-frame.test.js out/workspace.test.js scripts/styling.test.mjs scripts/brand-file.test.mjs scripts/assert-desktop-brand.test.mjs && ./scripts/test-next-release-version.sh && ./scripts/sync-package-indexes.test.sh",
     "package": "./scripts/package.sh"
   },
   "devDependencies": {

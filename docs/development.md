@@ -116,10 +116,11 @@ Host smoke of the staged sidecar (quit pipe): `./scripts/smoke-sidecar.sh`. Afte
 
 ## Automatic releases
 
-`versions.json` and `package.json` contain the `X.Y.Z` desktop base version.
+`versions.json` and `package.json` contain the `X.Y.Z-rc.N` desktop base version, which must match `harness.version`.
 Every push to `master` runs `.github/workflows/release.yml` serially. The
-workflow finds the highest existing `desktop-vX.Y.Z-N` tag, selects `N + 1`,
-passes `X.Y.Z-N` into the complete build matrix, and creates the tag only after
+workflow finds the highest build counter in existing legacy or
+`desktop-vX.Y.Z-rc.N-build-M` tags, selects `M + 1`, passes
+`X.Y.Z-rc.N-build-M` into the complete build matrix, and creates the tag only after
 all packages and smoke tests pass. Rerunning a released commit reuses its
 existing version instead of consuming a new build number.
 

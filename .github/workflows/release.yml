@@ -1,4 +1,4 @@
-# Every push to master becomes one numbered desktop release after the complete
+# Every push to master becomes one Harness-aligned desktop release after the complete
 # six-platform build and smoke-test matrix succeeds.
 name: Release
 
@@ -35,7 +35,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Calculate per-version build number
+      - name: Calculate desktop build number
         id: release
         run: |
           set -euo pipefail
@@ -54,6 +54,10 @@ jobs:
 
           if [ "$base_version" != "$package_version" ]; then
             echo "error: versions.json desktop.version ($base_version) does not match package.json ($package_version)" >&2
+            exit 1
+          fi
+          if [ "$base_version" != "$harness_version" ]; then
+            echo "error: desktop version ($base_version) does not match Harness version ($harness_version)" >&2
             exit 1
           fi
           if [ -z "$harness_sha" ] || [ "$harness_sha" = "null" ]; then

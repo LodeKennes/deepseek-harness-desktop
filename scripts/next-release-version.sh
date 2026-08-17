@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Calculate the next desktop-vX.Y.Z-N release for a commit.
+# Calculate the next desktop-vX.Y.Z-rc.N-build-M release for a commit.
 set -euo pipefail
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -9,14 +9,14 @@ cd "$repo_root"
 base_version=${1:-$(jq -r .desktop.version versions.json)}
 target_commit=${2:-HEAD}
 
-if ! [[ "$base_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "error: desktop base version must be X.Y.Z (got '$base_version')" >&2
+if ! [[ "$base_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
+  echo "error: desktop base version must be X.Y.Z-rc.N (got '$base_version')" >&2
   exit 1
 fi
 
 git rev-parse --verify "${target_commit}^{commit}" >/dev/null
 
-tag_prefix="desktop-v${base_version}-"
+tag_prefix="desktop-v${base_version}-build-"
 existing_build=0
 while IFS= read -r tag; do
   build=${tag#"$tag_prefix"}
@@ -31,16 +31,23 @@ if [ "$existing_build" -gt 0 ]; then
 else
   max_build=0
   while IFS= read -r tag; do
-    build=${tag#"$tag_prefix"}
-    if [[ "$build" =~ ^[0-9]+$ ]] && [ "$build" -gt "$max_build" ]; then
+    if [[ "$tag" =~ ^desktop-v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+-build-([0-9]+)$ ]]; then
+      build=${BASH_REMATCH[1]}
+    elif [[ "$tag" =~ ^desktop-v[0-9]+\.[0-9]+\.[0-9]+-([0-9]+)$ ]]; then
+      # Preserve continuity with legacy desktop-vX.Y.Z-N releases.
+      build=${BASH_REMATCH[1]}
+    else
+      continue
+    fi
+    if [ "$build" -gt "$max_build" ]; then
       max_build=$build
     fi
-  done < <(git tag --list "${tag_prefix}*")
+  done < <(git tag --list 'desktop-v*')
   build_number=$((max_build + 1))
   existing=false
 fi
 
-version="${base_version}-${build_number}"
+version="${base_version}-build-${build_number}"
 tag="${tag_prefix}${build_number}"
 
 printf 'base_version=%s\n' "$base_version"

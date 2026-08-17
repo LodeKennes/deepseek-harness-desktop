@@ -130,6 +130,6 @@ The shipped profile is the `web` template only. `dsh plugin` is an advanced path
 ## Updates
 
 There is **no in-app auto-update**. Every successful push to `master` publishes
-the next `desktop-vX.Y.Z-N` GitHub Release automatically; download newer builds
+the next `desktop-vX.Y.Z-rc.N-build-M` GitHub Release automatically; download newer builds
 from the Releases page. Signing (and only then in-app auto-update) is a
 follow-up; see [signing.md](signing.md).

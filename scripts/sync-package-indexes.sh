@@ -25,8 +25,8 @@ if [ -z "$tag" ]; then
   tag=$(gh release view --repo "$repo" --json tagName --jq .tagName)
 fi
 
-if [[ ! "$tag" =~ ^desktop-v([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)$ ]]; then
-  echo "error: tag must look like desktop-vX.Y.Z-N (got '$tag')" >&2
+if [[ ! "$tag" =~ ^desktop-v([0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+-build-[0-9]+)$ ]]; then
+  echo "error: tag must look like desktop-vX.Y.Z-rc.N-build-M (got '$tag')" >&2
   exit 1
 fi
 version=${BASH_REMATCH[1]}
@@ -100,7 +100,7 @@ cask "deepseek-harness" do
 
   livecheck do
     url :homepage
-    regex(/desktop-v?(\\d+(?:\\.\\d+)+-\\d+)/i)
+    regex(/desktop-v?(\\d+(?:\\.\\d+)+-rc\\.\\d+-build-\\d+)/i)
     strategy :github_latest
   end
 
@@ -148,7 +148,7 @@ cat >"$repo_root/bucket/deepseek-harness.json" <<JSON
   ],
   "checkver": {
     "url": "https://github.com/${repo}/releases/latest",
-    "regex": "desktop-v([\\\\d.]+-\\\\d+)"
+    "regex": "desktop-v([\\\\d.]+-rc\\\\.\\\\d+-build-\\\\d+)"
   },
   "autoupdate": {
     "architecture": {

@@ -33,15 +33,15 @@ in this workflow file). First-time gallery listings stay manual.
 ### WinGet
 
 ```sh
-./scripts/sync-package-indexes.sh desktop-v0.1.0-6
+./scripts/sync-package-indexes.sh desktop-v0.1.0-rc.7-build-9
 # copy packaging/winget/LodeKennes.DeepSeekHarness/*
-# to manifests/l/LodeKennes/DeepSeekHarness/0.1.0-6/ in a winget-pkgs fork
+# to manifests/l/LodeKennes/DeepSeekHarness/0.1.0-rc.7-build-9/ in a winget-pkgs fork
 ```
 
 Or, with [wingetcreate](https://github.com/microsoft/winget-create) on Windows:
 
 ```powershell
-wingetcreate new https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.0-6/DeepSeek-Harness-0.1.0-6-win-x64.exe
+wingetcreate new https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.0-rc.7-build-9/DeepSeek-Harness-0.1.0-rc.7-build-9-win-x64.exe
 ```
 
 ### Chocolatey
@@ -52,7 +52,7 @@ choco pack
 choco push deepseek-harness.1.2.3.9.nupkg --source https://push.chocolatey.org/
 ```
 
-The Chocolatey version maps `0.1.0-6` → `0.1.0.6` (hyphens are not legal there).
+The Chocolatey and AUR versions map `0.1.0-rc.7-build-9` → `0.1.0.rc.7.build.9` because their package versions cannot contain hyphens.
 
 ### AUR
 

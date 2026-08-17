@@ -69,8 +69,8 @@ if [ -z "$product_name_safe" ] || [ "$product_name_safe" = "null" ] || [[ "$prod
   exit 1
 fi
 
-if ! [[ "$package_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]]; then
-  echo "error: package version must be X.Y.Z or X.Y.Z-N (got '$package_version')" >&2
+if ! [[ "$package_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+(-build-[0-9]+)?$ ]]; then
+  echo "error: package version must be X.Y.Z-rc.N or X.Y.Z-rc.N-build-M (got '$package_version')" >&2
   exit 1
 fi
 
