@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/LodeKennes/deepseek-harness-desktop/releases/latest"><img src="https://img.shields.io/github/v/release/LodeKennes/deepseek-harness-desktop?label=release&color=4D6BFE" alt="Latest release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/LodeKennes/deepseek-harness-desktop?color=0f1115" alt="MIT License"></a>
-  <a href="https://github.com/deepseek-ai/deepseek-harness"><img src="https://img.shields.io/badge/harness-0.1.0--rc.7-4176e6" alt="Pinned Harness version"></a>
+  <a href="https://github.com/deepseek-ai/deepseek-harness"><img src="https://img.shields.io/badge/harness-0.1.0--rc.8-4176e6" alt="Pinned Harness version"></a>
   <a href="https://github.com/LodeKennes/deepseek-harness-desktop/actions/workflows/build-desktop.yml"><img src="https://img.shields.io/github/actions/workflow/status/LodeKennes/deepseek-harness-desktop/build-desktop.yml?label=build" alt="Build status"></a>
 </p>
 
@@ -105,14 +105,14 @@ Use the upstream channels. This packager does not host a separate community.
 
 | Field | Current |
 | --- | --- |
-| Desktop base | `0.1.0-rc.7` · `ai.deepseek.harness.desktop` |
-| Harness | `0.1.0-rc.7` at `99f6f02fecdb7dff40c3fbc9470f5907c29f74ca` |
+| Desktop base | `0.1.0-rc.8` · `ai.deepseek.harness.desktop` |
+| Harness | `0.1.0-rc.8` at `141eb6fef83422698aef7a981029e843e8161534` |
 | Node (bundled) | `24.19.0` |
 | pnpm | `11.21.0` |
 | Electron | `43.4.0` |
 | CLIProxyAPI | `7.2.132` |
 
-A push to `master` publishes `desktop-v0.1.0-rc.7-build-N`. The desktop base version matches Harness, while `build-N` is a globally increasing desktop build counter. Bumping the Harness version and SHA is a deliberate commit here. There is no git submodule and no vendored Harness tree.
+A push to `master` publishes `desktop-v0.1.0-rc.8-build-N`. The desktop base version matches Harness, while `build-N` is a globally increasing desktop build counter. Bumping the Harness version and SHA is a deliberate commit here. There is no git submodule and no vendored Harness tree.
 
 ## Development
 
