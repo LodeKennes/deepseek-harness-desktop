@@ -65,4 +65,6 @@ ensure_harness_pnpm
 cd "$dir"
 # Nested npm scripts (build:web) invoke `pnpm` from PATH.
 pnpm install --frozen-lockfile
-pnpm run build
+# rc-8+ builds apps/web's title from DSH_CLIENT_TITLE (default "DSH Local
+# Build"); set it so the built index.html matches desktop-brand's needle.
+DSH_CLIENT_TITLE=$(jq -r .productName "$repo_root/styling.json") pnpm run build
