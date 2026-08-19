@@ -181,19 +181,19 @@ test('welcome overlay keeps locales import surface', () => {
 
 test('applyOverlayToClone refuses a missing AppRoot needle', () => {
   const root = mkdtempSync(join(tmpdir(), 'styling-'))
-  const rel = 'packages/client/web/src/AppRoot.tsx'
+  const rel = 'packages/client/web/src/boot-page.ts'
   mkdirSync(join(root, 'packages/client/web/src'), { recursive: true })
-  writeFileSync(join(root, rel), 'export function AppRoot() { return null }\n')
+  writeFileSync(join(root, rel), 'export class BootPage {}\n')
   assert.throws(() => applyOverlayToClone(root, [], 'ACME'), /lost HARNESS needle/)
 })
 
 test('applyOverlayToClone patches the boot plate and copies marked files', () => {
   const root = mkdtempSync(join(tmpdir(), 'styling-'))
-  const appRoot = 'packages/client/web/src/AppRoot.tsx'
+  const appRoot = 'packages/client/web/src/boot-page.ts'
   const wordmark = 'packages/client/ui-primitives/src/BrandWordmark.tsx'
   mkdirSync(join(root, 'packages/client/web/src'), { recursive: true })
   mkdirSync(join(root, 'packages/client/ui-primitives/src'), { recursive: true })
-  writeFileSync(join(root, appRoot), `        ${APPROOT_WORDMARK_NEEDLE}\n`)
+  writeFileSync(join(root, appRoot), `    this.wordmark = ${APPROOT_WORDMARK_NEEDLE}\n`)
   writeFileSync(join(root, wordmark), 'export function BrandWordmark() { return null }\n')
   const files = [{
     rel: wordmark,

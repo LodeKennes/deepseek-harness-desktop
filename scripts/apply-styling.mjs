@@ -75,7 +75,7 @@ applyOverlayToClone(clone, files, styling.bootWordmark)
 writeFileSync(paths.stamp, renderOverlayStamp({
   sha,
   stylingHash,
-  files: files.map((file) => file.rel).concat(['packages/client/web/src/AppRoot.tsx']),
+  files: files.map((file) => file.rel).concat(['packages/client/web/src/boot-page.ts']),
 }))
 console.log(`apply-styling: applied overlay to ${clone} @ ${sha}`)
 

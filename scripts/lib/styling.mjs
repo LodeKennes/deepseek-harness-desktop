@@ -4,7 +4,7 @@ import { dirname, join, relative } from 'node:path'
 
 export const LEGACY_WORKSPACE_FOLDER = 'DeepSeek Harness'
 export const OVERLAY_FILE_BUDGET = 8
-export const APPROOT_WORDMARK_NEEDLE = '<div className={css.wordmark}>HARNESS</div>'
+export const APPROOT_WORDMARK_NEEDLE = "div(css.wordmark, 'HARNESS')"
 export const INDEX_TITLE_NEEDLE = '<title>DeepSeek Harness</title>'
 
 export const COLOR_TOKEN_NAMES = {
@@ -22,7 +22,7 @@ export const OVERLAY_TARGETS = {
   favicon: 'apps/web/public/favicon.svg',
   manifest: 'apps/web/public/manifest.webmanifest',
   welcome: 'packages/client/ui-settings-models/src/onboarding-copy.ts',
-  appRoot: 'packages/client/web/src/AppRoot.tsx',
+  appRoot: 'packages/client/web/src/boot-page.ts',
 }
 
 const OVERLAY_MARKERS = {
@@ -284,7 +284,7 @@ export function patchAppRoot(cloneRoot, bootWordmark) {
   }
   const next = current.replace(
     APPROOT_WORDMARK_NEEDLE,
-    `<div className={css.wordmark}>${bootWordmark}</div>`,
+    `div(css.wordmark, '${bootWordmark}')`,
   )
   writeFileSync(dest, next)
 }
