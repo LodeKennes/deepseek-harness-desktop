@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
 PackageIdentifier: LodeKennes.DeepSeekHarness
-PackageVersion: 0.1.0-6
+PackageVersion: 0.1.1-rc.1-build-11
 PackageLocale: en-US
 Publisher: Lode Kennes
 PublisherUrl: https://github.com/LodeKennes
@@ -20,6 +20,6 @@ Tags:
   - electron
   - agent
   - desktop
-ReleaseNotesUrl: https://github.com/LodeKennes/deepseek-harness-desktop/releases/tag/desktop-v0.1.0-6
+ReleaseNotesUrl: https://github.com/LodeKennes/deepseek-harness-desktop/releases/tag/desktop-v0.1.1-rc.1-build-11
 ManifestType: defaultLocale
 ManifestVersion: 1.9.0
