@@ -53,10 +53,10 @@ sum_of() {
 
 if [ -z "$sums_file" ]; then
   need_cmd gh
-  tmp=$(mktemp)
-  trap 'rm -f "$tmp"' EXIT
-  gh release download "$tag" --repo "$repo" --pattern SHA256SUMS --output "$tmp"
-  sums_file=$tmp
+  tmp=$(mktemp -d)
+  trap 'rm -rf "$tmp"' EXIT
+  gh release download "$tag" --repo "$repo" --pattern SHA256SUMS --output "$tmp/SHA256SUMS"
+  sums_file=$tmp/SHA256SUMS
 fi
 
 mac_arm_dmg=$(asset mac-arm64.dmg)
