@@ -28,7 +28,7 @@ export const OVERLAY_TARGETS = {
 const OVERLAY_MARKERS = {
   [OVERLAY_TARGETS.wordmark]: 'export function BrandWordmark',
   [OVERLAY_TARGETS.logo]: 'export function FishLogo',
-  [OVERLAY_TARGETS.welcome]: 'WELCOME_NOTICE_COPY',
+  [OVERLAY_TARGETS.welcome]: 'WELCOME_NOTICE_VERSION',
   [OVERLAY_TARGETS.appRoot]: APPROOT_WORDMARK_NEEDLE,
 }
 
