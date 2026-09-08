@@ -1,9 +1,9 @@
 cask "deepseek-harness" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.1.1-rc.1-build-11"
-  sha256 arm:   "e6b3b46659af78f357b1b9627812f35155d719db42e666be41d5777f4c16e8d0",
-         intel: "4daf8600b80525301f2bacf86ca77d15a2a89cad8556c6723168246694ddc842"
+  version "0.1.2-rc.1-build-12"
+  sha256 arm:   "1d4eabd98f58161ac43166120becfa55af6e16bab2c586e197f2a0a7d007c9fc",
+         intel: "c2f1546fbe75fdf33a34df878d9e2e3cf25270f95206ab517eee05dac05ed84f"
 
   url "https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v#{version}/DeepSeek-Harness-#{version}-mac-#{arch}.dmg",
       verified: "github.com/LodeKennes/deepseek-harness-desktop/"

@@ -4,8 +4,8 @@ $packageArgs = @{
   fileType       = 'exe'
   silentArgs     = '/S'
   validExitCodes = @(0)
-  url64bit       = 'https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.1-rc.1-build-11/DeepSeek-Harness-0.1.1-rc.1-build-11-win-x64.exe'
-  checksum64     = 'c6cbda57171531d8e1a30dbdb23dbd41db931030d7ec9604e26cba60c061a721'
+  url64bit       = 'https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.2-rc.1-build-12/DeepSeek-Harness-0.1.2-rc.1-build-12-win-x64.exe'
+  checksum64     = '23bb46817e119186266148af8a4f941648004fd7f47d72b2fbc9eaf8be2fbfeb'
   checksumType64 = 'sha256'
 }
 Install-ChocolateyPackage @packageArgs

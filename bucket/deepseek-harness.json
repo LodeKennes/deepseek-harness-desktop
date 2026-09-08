@@ -1,17 +1,17 @@
 {
-  "version": "0.1.1-rc.1-build-11",
+  "version": "0.1.2-rc.1-build-12",
   "description": "Desktop installers for DeepSeek Harness. Everything is a plugin.",
   "homepage": "https://github.com/LodeKennes/deepseek-harness-desktop",
   "license": "MIT",
   "notes": "Unsigned developer-preview build. SmartScreen will warn.",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.1-rc.1-build-11/DeepSeek-Harness-0.1.1-rc.1-build-11-win-x64.zip",
-      "hash": "af4bc379e890bffbfca18ea8eb1f4f41478c83f8d84e5dd9079dc165e168b598"
+      "url": "https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.2-rc.1-build-12/DeepSeek-Harness-0.1.2-rc.1-build-12-win-x64.zip",
+      "hash": "4aa66039fe7abfa5b03ba160e5b1c7b0ad0dd87b6312a1706a4e9a908f13d1a6"
     },
     "arm64": {
-      "url": "https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.1-rc.1-build-11/DeepSeek-Harness-0.1.1-rc.1-build-11-win-arm64.zip",
-      "hash": "fb5b2e1196d9d9903c6860cd134acd9cdfbd63a0e8c6700c2b5dbda26e93d65f"
+      "url": "https://github.com/LodeKennes/deepseek-harness-desktop/releases/download/desktop-v0.1.2-rc.1-build-12/DeepSeek-Harness-0.1.2-rc.1-build-12-win-arm64.zip",
+      "hash": "ecb255de3eca505c3875c4c333ea25dd743a85dc63a246b14a7049c39d408f2e"
     }
   },
   "shortcuts": [
