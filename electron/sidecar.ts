@@ -11,7 +11,7 @@ import { resolveDshHome } from './workspace.js'
 
 export { sidecarArgv } from './sidecar-argv.js'
 
-const READY_RE = /^dsh web: (http:\/\/127\.0\.0\.1:\d+)/
+const READY_RE = /^dsh web: (http:\/\/127\.0\.0\.1:\d+[^\s)]*)/
 export const DEFAULT_READY_TIMEOUT_MS = 60_000
 export const FIRST_HEAL_READY_TIMEOUT_MS = 180_000
 const STOP_TIMEOUT_MS = 6_000

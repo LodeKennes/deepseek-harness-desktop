@@ -1,61 +1,64 @@
 #!/usr/bin/env bash
-# Host smoke: staged sidecar prints the URL, HTTP 200, stdin quit exits 0.
+# Smoke test: stage the harness runtime, start the sidecar via sidecar-entry.mjs,
+# verify it serves the web UI on loopback, then send 'quit' on stdin and verify
+# clean exit within 5s.
 set -euo pipefail
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd "$script_dir/.." && pwd)
 cd "$repo_root"
 
+ready_timeout=${SMOKE_READY_TIMEOUT:-60}
+quit_timeout=${SMOKE_QUIT_TIMEOUT:-10}
+
 need_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    echo "error: $1 is required but not found on PATH" >&2
+    echo "error: $1 is required but not found on PATH${2:+ ($2)}" >&2
     exit 1
   fi
 }
 
-is_windows() {
-  case "$(uname -s)" in
-    MINGW*|MSYS*|CYGWIN*|Windows_NT) return 0 ;;
-  esac
-  return 1
-}
-
-win_path() {
-  if command -v cygpath >/dev/null 2>&1; then
-    cygpath -w "$1"
-  else
-    printf '%s' "$1"
-  fi
-}
-
-stage=${STAGE:-$repo_root/dist/runtime}
+stage=${1:-dist/runtime}
 case "$stage" in
   /*) ;;
   *) stage="$repo_root/$stage" ;;
 esac
 
-entry="$stage/sidecar-entry.mjs"
-if [ -f "$stage/node/node.exe" ]; then
+node_bin="$stage/node/bin/node"
+if [ ! -f "$node_bin" ]; then
   node_bin="$stage/node/node.exe"
-elif [ -x "$stage/node/bin/node" ]; then
-  node_bin="$stage/node/bin/node"
-else
-  need_cmd node
-  node_bin=$(command -v node)
 fi
+entry="$stage/sidecar-entry.mjs"
 
-if ! is_windows; then
-  need_cmd curl
+if [ ! -x "$node_bin" ] && [ ! -f "$node_bin" ]; then
+  echo "error: node binary missing at $node_bin (run scripts/stage-runtime.sh)" >&2
+  exit 1
 fi
-
 if [ ! -f "$entry" ]; then
-  echo "error: $entry missing; run scripts/stage-runtime.sh" >&2
+  echo "error: sidecar entry missing at $entry (run scripts/stage-runtime.sh)" >&2
   exit 1
 fi
 
-port=${SMOKE_PORT:-13820}
-ready_timeout=${SMOKE_READY_TIMEOUT:-180}
-quit_timeout=${SMOKE_QUIT_TIMEOUT:-10}
+port_in_use() {
+  local p=$1
+  if command -v nc >/dev/null 2>&1; then
+    nc -z 127.0.0.1 "$p" >/dev/null 2>&1 && return 0 || return 1
+  fi
+  (exec 3<>/dev/tcp/127.0.0.1/"$p") 2>/dev/null && { exec 3>&-; return 0; } || return 1
+}
+
+find_free_port() {
+  local p=13820
+  while [ "$p" -lt 13900 ]; do
+    if ! port_in_use "$p"; then
+      echo "$p"
+      return 0
+    fi
+    p=$((p + 1))
+  done
+  echo "error: could not find free port in range 13820-13899" >&2
+  exit 1
+}
 
 workdir=$(mktemp -d)
 dsh_home=$(mktemp -d)
@@ -78,10 +81,10 @@ fifo_fd_open=0
 
 cleanup() {
   if [ "$fifo_fd_open" -eq 1 ]; then
-    exec 3>&- || true
+    exec 3>&- 2>/dev/null || true
     fifo_fd_open=0
   fi
-  if [ -n "${pid:-}" ] && kill -0 "$pid" 2>/dev/null; then
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
     kill -9 "$pid" 2>/dev/null || true
     wait "$pid" 2>/dev/null || true
   fi
@@ -89,44 +92,52 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if is_windows; then
-  export DSH_HOME
-  DSH_HOME=$(win_path "$dsh_home")
-  export USERPROFILE
-  USERPROFILE=$(win_path "$dsh_home/home")
-  mkdir -p "$dsh_home/home"
-else
-  export DSH_HOME="$dsh_home"
-fi
-export DSH_TELEMETRY_DISABLED=1
+# Isolate user config / session state from any real ~/.dsh during smoke
+export DSH_HOME="$dsh_home"
 
-# Official node.exe cannot consume an MSYS FIFO. Drive stdin from Node.
-if is_windows; then
-  helper_node=$(command -v node || true)
-  if [ -z "$helper_node" ]; then
-    helper_node=$node_bin
+port=$(find_free_port)
+
+# On Windows (Git Bash/MSYS2), named pipes via mkfifo cannot bridge native
+# node.exe stdin. Run an inline node runner that uses real anonymous pipes.
+is_win=0
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*) is_win=1 ;;
+esac
+
+win_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$1"
+  else
+    printf '%s' "$1"
   fi
-  echo "smoke-sidecar: windows quit-pipe via node helper port=$port entry=$entry"
-  SMOKE_NODE=$(win_path "$node_bin")
-  SMOKE_ENTRY=$(win_path "$entry")
+}
+
+if [ "$is_win" -eq 1 ]; then
+  export SMOKE_STAGE="$stage"
+  export SMOKE_NODE_BIN=$(win_path "$node_bin")
+  export SMOKE_ENTRY=$(win_path "$entry")
+  export SMOKE_WORKDIR=$(win_path "$workdir")
+  export SMOKE_PORT="$port"
+  export SMOKE_READY_TIMEOUT="$ready_timeout"
+  export SMOKE_QUIT_TIMEOUT="$quit_timeout"
   SMOKE_PATCH=$(win_path "$patch")
   if [ -f "$brand_patch" ]; then
     SMOKE_BRAND_PATCH=$(win_path "$brand_patch")
     export SMOKE_BRAND_PATCH
   fi
-  export SMOKE_NODE SMOKE_ENTRY SMOKE_PATCH SMOKE_PORT="$port"
-  export SMOKE_READY_TIMEOUT="$ready_timeout" SMOKE_QUIT_TIMEOUT="$quit_timeout"
-  "$helper_node" --input-type=module - "$workdir" <<'JS'
-import { spawn } from 'node:child_process'
-import { request } from 'node:http'
-import { writeFileSync } from 'node:fs'
+  export SMOKE_PATCH
 
-const workdir = process.argv[2]
-const nodeBin = process.env.SMOKE_NODE
+  "$node_bin" --input-type=module - <<'EOF'
+import { spawn } from 'node:child_process'
+import { writeFileSync, readFileSync } from 'node:fs'
+import { request } from 'node:http'
+
+const nodeBin = process.env.SMOKE_NODE_BIN
 const entry = process.env.SMOKE_ENTRY
+const workdir = process.env.SMOKE_WORKDIR
 const patch = process.env.SMOKE_PATCH
 const port = process.env.SMOKE_PORT
-const readyMs = Number(process.env.SMOKE_READY_TIMEOUT || 180) * 1000
+const readyMs = Number(process.env.SMOKE_READY_TIMEOUT || 60) * 1000
 const quitMs = Number(process.env.SMOKE_QUIT_TIMEOUT || 10) * 1000
 
 const brand = process.env.SMOKE_BRAND_PATCH
@@ -170,7 +181,7 @@ const url = await new Promise((resolve, reject) => {
     reject(new Error(`sidecar exited before ready (code ${code}, signal ${signal})`))
   })
   const onChunk = () => {
-    const match = out.match(/http:\/\/127\.0\.0\.1:\d+/)
+    const match = out.match(/http:\/\/127\.0\.0\.1:\d+[^\s)]*/)
     if (!match) return
     clearTimeout(timer)
     child.removeAllListeners('exit')
@@ -183,18 +194,28 @@ const url = await new Promise((resolve, reject) => {
 
 console.log(`smoke-sidecar: ready ${url}`)
 
-const code = await new Promise((resolve, reject) => {
-  const req = request(url, { method: 'GET', timeout: 10_000 }, (res) => {
-    res.resume()
-    resolve(res.statusCode ?? 0)
+const httpGet = (targetUrl, headers = {}) => new Promise((resolve, reject) => {
+  const req = request(targetUrl, { method: 'GET', timeout: 10_000, headers }, (res) => {
+    let body = ''
+    res.on('data', chunk => { body += chunk })
+    res.on('end', () => resolve({ code: res.statusCode ?? 0, headers: res.headers, body }))
   })
   req.on('error', reject)
   req.end()
 })
-if (code !== 200) {
+
+let res = await httpGet(url)
+if (res.code === 303 && res.headers['set-cookie']) {
+  const setCookie = res.headers['set-cookie']
+  const cookie = Array.isArray(setCookie) ? setCookie.map(c => c.split(';')[0]).join('; ') : setCookie.split(';')[0]
+  const nextUrl = new URL(res.headers.location || '/', url).href
+  res = await httpGet(nextUrl, { cookie })
+}
+
+if (res.code !== 200) {
   dump()
   child.kill()
-  throw new Error(`expected HTTP 200 from ${url}, got ${code}`)
+  throw new Error(`expected HTTP 200 from ${url}, got ${res.code}`)
 }
 
 child.stdin.write('quit\n')
@@ -213,10 +234,11 @@ const status = await new Promise((resolve, reject) => {
 })
 dump()
 if (status !== 0) {
-  throw new Error(`sidecar exit ${status}, expected 0`)
+  throw new Error(`sidecar exited with code ${status} (expected 0)`)
 }
 console.log('smoke-sidecar: quit ok')
-JS
+process.exit(0)
+EOF
   exit $?
 fi
 
@@ -243,7 +265,7 @@ while [ "$SECONDS" -lt "$deadline" ]; do
     pid=
     exit 1
   fi
-  if url=$(grep -Eom1 'http://127\.0\.0\.1:[0-9]+' "$workdir/out" 2>/dev/null); then
+  if url=$(grep -Eom1 'http://127\.0\.0\.1:[0-9]+[^[:space:]\)]*' "$workdir/out" 2>/dev/null); then
     break
   fi
   sleep 0.25
@@ -260,8 +282,8 @@ fi
 
 echo "smoke-sidecar: ready $url"
 
-html=$(curl -sS --max-time 10 "$url")
-code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "$url")
+html=$(curl -sSL -c "$workdir/cookies.txt" -b "$workdir/cookies.txt" --max-time 10 "$url")
+code=$(curl -sSL -c "$workdir/cookies.txt" -b "$workdir/cookies.txt" -o /dev/null -w '%{http_code}' --max-time 10 "$url")
 if [ "$code" != "200" ]; then
   echo "error: expected HTTP 200 from $url, got $code" >&2
   exit 1
@@ -275,27 +297,37 @@ if [ -f "$brand_patch" ]; then
   fi
 fi
 
+# Send quit command on stdin
 printf 'quit\n' >&3
+# Close writer to send EOF
 exec 3>&-
 fifo_fd_open=0
 
 quit_deadline=$((SECONDS + quit_timeout))
-while kill -0 "$pid" 2>/dev/null && [ "$SECONDS" -lt "$quit_deadline" ]; do
-  sleep 0.2
+while [ "$SECONDS" -lt "$quit_deadline" ]; do
+  if ! kill -0 "$pid" 2>/dev/null; then
+    break
+  fi
+  sleep 0.1
 done
 
 if kill -0 "$pid" 2>/dev/null; then
   echo "error: sidecar did not exit within ${quit_timeout}s after quit" >&2
+  echo "----- stdout -----" >&2
+  cat "$workdir/out" >&2 || true
+  echo "----- stderr -----" >&2
+  cat "$workdir/err" >&2 || true
   exit 1
 fi
 
-set +e
 wait "$pid"
 status=$?
-set -e
 pid=
+
 if [ "$status" -ne 0 ]; then
-  echo "error: sidecar exit $status, expected 0" >&2
+  echo "error: sidecar exited with code $status (expected 0)" >&2
+  echo "----- stdout -----" >&2
+  cat "$workdir/out" >&2 || true
   echo "----- stderr -----" >&2
   cat "$workdir/err" >&2 || true
   exit 1
