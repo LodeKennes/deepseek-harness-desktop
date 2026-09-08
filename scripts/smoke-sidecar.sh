@@ -114,9 +114,9 @@ win_path() {
 
 if [ "$is_win" -eq 1 ]; then
   export SMOKE_STAGE="$stage"
-  export SMOKE_NODE_BIN=$(win_path "$node_bin")
-  export SMOKE_ENTRY=$(win_path "$entry")
-  export SMOKE_WORKDIR=$(win_path "$workdir")
+  SMOKE_NODE_BIN=$(win_path "$node_bin"); export SMOKE_NODE_BIN
+  SMOKE_ENTRY=$(win_path "$entry"); export SMOKE_ENTRY
+  SMOKE_WORKDIR=$(win_path "$workdir"); export SMOKE_WORKDIR
   export SMOKE_PORT="$port"
   export SMOKE_READY_TIMEOUT="$ready_timeout"
   export SMOKE_QUIT_TIMEOUT="$quit_timeout"
