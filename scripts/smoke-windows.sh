@@ -40,6 +40,16 @@ win_path() {
   fi
 }
 
+is_port_ready() {
+  local target_port="$1"
+  local code
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 "http://127.0.0.1:$target_port/" || true)
+  case "$code" in
+    200|301|302|303|307|308|401|403) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 # Prefer GHA RUNNER_ARCH: Git Bash on windows-11-arm can report x86_64.
 detect_pack_arch() {
   if [ -n "${RUNNER_ARCH:-}" ]; then
@@ -155,7 +165,7 @@ while [ "$SECONDS" -lt "$deadline" ]; do
   fi
   if [ -f "$listen_port" ]; then
     port=$(tr -d '[:space:]' <"$listen_port")
-    if [ -n "$port" ] && curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:$port/"; then
+    if [ -n "$port" ] && is_port_ready "$port"; then
       url="http://127.0.0.1:$port"
       break
     fi

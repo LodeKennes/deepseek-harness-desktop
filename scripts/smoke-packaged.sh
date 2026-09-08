@@ -46,6 +46,16 @@ first_find_print() {
   ( set +o pipefail; find "$@" -print | head -n 1 )
 }
 
+is_port_ready() {
+  local target_port="$1"
+  local code
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 "http://127.0.0.1:$target_port/" || true)
+  case "$code" in
+    200|301|302|303|307|308|401|403) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 smoke_packaged_mac() {
   need_cmd unzip
   local zip dmg app helper bin url port
@@ -142,7 +152,7 @@ smoke_packaged_mac() {
     fi
     if [ -f "$DSH_HOME/desktop/listen-port" ]; then
       port=$(tr -d '[:space:]' <"$DSH_HOME/desktop/listen-port")
-      if [ -n "$port" ] && curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:$port/"; then
+      if [ -n "$port" ] && is_port_ready "$port"; then
         url="http://127.0.0.1:$port"
         break
       fi
@@ -356,7 +366,7 @@ while [ "$SECONDS" -lt "$deadline" ]; do
   fi
   if [ -f "$DSH_HOME/desktop/listen-port" ]; then
     port=$(tr -d '[:space:]' <"$DSH_HOME/desktop/listen-port")
-    if [ -n "$port" ] && curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:$port/"; then
+    if [ -n "$port" ] && is_port_ready "$port"; then
       url="http://127.0.0.1:$port"
       break
     fi
@@ -470,7 +480,7 @@ while [ "$SECONDS" -lt "$deadline" ]; do
   fi
   if [ -f "$DSH_HOME/desktop/listen-port" ]; then
     port=$(tr -d '[:space:]' <"$DSH_HOME/desktop/listen-port")
-    if [ -n "$port" ] && curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:$port/"; then
+    if [ -n "$port" ] && is_port_ready "$port"; then
       deb_url="http://127.0.0.1:$port"
       break
     fi
